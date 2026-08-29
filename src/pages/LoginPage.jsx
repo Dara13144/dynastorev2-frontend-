@@ -4,29 +4,20 @@ import { motion } from 'framer-motion';
 import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import GoogleSignInModal from '../components/GoogleSignInModal.jsx';
 
 export default function LoginPage() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showGoogleModal, setShowGoogleModal] = useState(false);
 
-  const [googleLoading, setGoogleLoading] = useState(false);
-
-  const handleGoogleLogin = async () => {
-    try {
-      setGoogleLoading(true);
-      await loginWithGoogle();
-      toast.success('Signed in with Google successfully!');
-      navigate('/');
-    } catch (err) {
-      toast.error(err.message || 'Google sign-in failed');
-    } finally {
-      setGoogleLoading(false);
-    }
+  const handleGoogleLogin = () => {
+    setShowGoogleModal(true);
   };
 
   const handleSubmit = async (e) => {
@@ -160,6 +151,9 @@ export default function LoginPage() {
           </Link>
         </div>
       </motion.div>
+
+      {/* Google Sign In Modal */}
+      <GoogleSignInModal isOpen={showGoogleModal} onClose={() => setShowGoogleModal(false)} />
     </div>
   );
 }
