@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-slate-100 font-sans antialiased overflow-x-hidden;
+    background-color: #090a0f;
+    background-image: 
+      radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(0, 240, 255, 0.06) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.08) 0px, transparent 50%);
+  }
+
+  /* Custom Modern Scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #0d1017;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #1e2638;
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #2e3a54;
+  }
+}
+
+@layer components {
+  .glass-card {
+    background: rgba(16, 19, 29, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .glass-card-hover {
+    @apply glass-card transition-all duration-300 hover:border-brand-cyan/40 hover:shadow-neon-cyan hover:-translate-y-1;
+  }
+
+  .glass-panel {
+    background: rgba(21, 25, 40, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .text-glow-cyan {
+    text-shadow: 0 0 12px rgba(0, 240, 255, 0.5);
+  }
+
+  .text-glow-purple {
+    text-shadow: 0 0 12px rgba(139, 92, 246, 0.5);
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-cyan via-purple-400 to-brand-purple font-extrabold;
+  }
+
+  .gradient-btn {
+    @apply bg-gradient-to-r from-cyan-500 via-indigo-600 to-purple-600 hover:from-cyan-400 hover:via-indigo-500 hover:to-purple-500 text-white font-semibold shadow-lg shadow-cyan-500/25 active:scale-95 transition-all duration-200;
+  }
+
+  .aba-btn {
+    @apply bg-gradient-to-r from-aba-blue to-aba-dark hover:from-cyan-700 hover:to-aba-blue text-white font-semibold border border-cyan-500/30 shadow-lg shadow-aba-blue/30 active:scale-95 transition-all duration-200;
+  }
+}
