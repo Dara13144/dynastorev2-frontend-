@@ -139,8 +139,29 @@ export const AuthProvider = ({ children }) => {
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
       '16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com';
 
+    // 1. Try Supabase Google OAuth Redirect First (Zero Origin-Mismatch)
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (!error && data?.url) {
+        window.location.href = data.url;
+        return;
+      }
+    } catch (sbErr) {
+      console.warn('Supabase OAuth notice, falling back to GIS Token Client:', sbErr.message);
+    }
+
+    // 2. Google Identity Services (GIS) Token Client Popup
     return new Promise((resolve, reject) => {
-      // 1. Modern Google OAuth2 Token Client (Real Google Popup Window)
       if (window.google?.accounts?.oauth2) {
         try {
           const tokenClient = window.google.accounts.oauth2.initTokenClient({
@@ -168,7 +189,7 @@ export const AuthProvider = ({ children }) => {
               } else if (tokenResponse?.error) {
                 console.warn('Google OAuth notice:', tokenResponse.error);
                 if (tokenResponse.error === 'origin_mismatch') {
-                  const originErr = new Error('Google Sign-In is not configured for this website origin. Please contact the site administrator or configure Authorized JavaScript Origins in Google Cloud.');
+                  const originErr = new Error('Google Sign-In is not configured for this website origin. Please register ' + window.location.origin + ' in Google Cloud Console.');
                   originErr.code = 'origin_mismatch';
                   reject(originErr);
                 } else {
@@ -185,7 +206,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 2. Fallback: Google Identity Services (GSI) One-Tap / ID Credential
+      // 3. Fallback: Google Identity Services (GSI) One-Tap / ID Credential
       if (window.google?.accounts?.id) {
         try {
           window.google.accounts.id.initialize({
@@ -193,7 +214,6 @@ export const AuthProvider = ({ children }) => {
             callback: async (response) => {
               try {
                 if (response.credential) {
-                  // Send real Google ID Token JWT to backend for cryptographic verification
                   const res = await API.post('/auth/google', {
                     credential: response.credential,
                   });
@@ -218,21 +238,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 3. Fallback seamless login bridge for Master Admin
-      API.post('/auth/google', {
-        email: 'dynastore2-904758-39q457@gmai.com',
-        name: 'DynaMasterAdmin',
-        picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dynastore2',
-      })
-        .then((res) => {
-          if (res.data.success) {
-            localStorage.setItem('dynastore_token', res.data.token);
-            setToken(res.data.token);
-            setUser(res.data.user);
-            resolve(res.data);
-          }
-        })
-        .catch(reject);
+      reject(new Error('Google Identity Services SDK is not loaded. Please check your internet connection or browser extensions.'));
     });
   };
 
