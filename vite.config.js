@@ -14,4 +14,16 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1600,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom'],
+          ui: ['framer-motion', 'lucide-react', 'canvas-confetti'],
+          supabase: ['@supabase/supabase-js'],
+        },
+      },
+    },
+  },
 });
