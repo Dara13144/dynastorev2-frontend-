@@ -152,10 +152,18 @@ export default function WalletPage() {
 
           {/* Top-up Selection */}
           <div className="rounded-3xl glass-card border border-white/10 p-6 space-y-5 shadow-xl">
-            <h3 className="text-base font-bold text-white font-display uppercase tracking-wider flex items-center gap-2">
-              <PlusCircle className="w-4 h-4 text-brand-cyan" />
-              Add Balance via CutLuy KHQR
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-white font-display uppercase tracking-wider flex items-center gap-2">
+                <PlusCircle className="w-4 h-4 text-brand-cyan" />
+                Add Balance via KHQR
+              </h3>
+              <div className="flex items-center gap-1.5">
+                <span className="bg-[#E1251B] text-white text-[9px] font-black px-1.5 py-0.2 rounded tracking-wider">BAKONG</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  All Banks • Instant
+                </span>
+              </div>
+            </div>
 
             {/* Quick Amount Buttons */}
             <div>
@@ -206,14 +214,14 @@ export default function WalletPage() {
                 <>
                   <QrCode className="w-4 h-4" />
                   <span>
-                    Top-Up ${customAmount || depositAmount} via CutLuy KHQR
+                    Top-Up ${customAmount || depositAmount} with KHQR (Bakong / All Banks)
                   </span>
                 </>
               )}
             </button>
 
             <div className="p-3 rounded-xl bg-white/5 text-[11px] text-slate-400 leading-relaxed">
-              💡 CutLuy KHQR auto-checks payment every 3-5 seconds and instantly credits funds to your wallet across all banking apps (Bakong, ABA, Wing, ACLEDA).
+              💡 Scan & pay with Bakong, ABA, Wing, ACLEDA, Canadia, TrueMoney, or any banking app. Instant auto-credit within 3-5 seconds.
             </div>
           </div>
         </div>

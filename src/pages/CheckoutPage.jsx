@@ -132,7 +132,7 @@ export default function CheckoutPage() {
               1. Select Payment Method
             </h3>
 
-            {/* CutLuy KHQR Option (Recommended) */}
+            {/* KHQR Bakong Option (Recommended) */}
             <label
               onClick={() => setPaymentMethod('CUTLUY')}
               className={`flex items-start gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
@@ -147,8 +147,8 @@ export default function CheckoutPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-sm font-bold text-white font-display">CutLuy KHQR</span>
-                    <span className="bg-[#E1251B] text-white text-[9px] font-black px-1.5 py-0.2 rounded">BAKONG</span>
+                    <span className="text-sm font-bold text-white font-display">KHQR</span>
+                    <span className="bg-[#E1251B] text-white text-[9px] font-black px-1.5 py-0.2 rounded tracking-wider">BAKONG</span>
                   </div>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                     All Banks • Instant
@@ -205,7 +205,11 @@ export default function CheckoutPage() {
             </h3>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400">Account</span>
-              <span className="font-semibold text-white">{user?.username} ({user?.email})</span>
+              <span className="font-semibold text-white">
+                {user?.username && user?.username !== user?.email && !user?.username.startsWith('dynastore2-')
+                  ? `${user.username} (${user.email})`
+                  : (user?.email || 'Guest')}
+              </span>
             </div>
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400">Digital Delivery</span>
@@ -268,7 +272,7 @@ export default function CheckoutPage() {
                   <span>
                     {paymentMethod === 'WALLET_BALANCE'
                       ? 'Pay with Wallet Balance'
-                      : 'Pay with CutLuy KHQR'}
+                      : 'Pay with KHQR (Bakong / All Banks)'}
                   </span>
                 </>
               )}

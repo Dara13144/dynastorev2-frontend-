@@ -291,7 +291,7 @@ export default function GameDetailPage() {
                   className="w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-rose-600/30"
                 >
                   <Zap className="w-4 h-4 fill-current" />
-                  Buy Now with CutLuy KHQR
+                  Buy Now with KHQR (Bakong / All Banks)
                 </button>
               </div>
             )}
