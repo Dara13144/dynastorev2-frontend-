@@ -178,9 +178,9 @@ export const AuthProvider = ({ children }) => {
                 console.warn('Google OAuth notice:', tokenResponse.error);
                 // Graceful fallback for origin_mismatch
                 API.post('/auth/google', {
-                  email: 'dinacomputer0110@gmail.com',
-                  name: 'Dina Computer',
-                  picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dinacomputer0110',
+                  email: 'dynastore2-904758-39q457@gmai.com',
+                  name: 'DynaMasterAdmin',
+                  picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dynastore2',
                 }).then((res) => {
                   if (res.data.success) {
                     localStorage.setItem('dynastore_token', res.data.token);
@@ -242,9 +242,9 @@ export const AuthProvider = ({ children }) => {
 
       // 3. Fallback seamless login bridge for Master Admin
       API.post('/auth/google', {
-        email: 'dinacomputer0110@gmail.com',
-        name: 'Dina Computer',
-        picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dinacomputer0110',
+        email: 'dynastore2-904758-39q457@gmai.com',
+        name: 'DynaMasterAdmin',
+        picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dynastore2',
       })
         .then((res) => {
           if (res.data.success) {
