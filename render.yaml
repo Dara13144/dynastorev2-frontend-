@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: dynastorev2-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        value: https://dynastorev2-backend.onrender.com/api
+      - key: VITE_SUPABASE_URL
+        value: https://zuhbtivatfaxxbuilltj.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aGJ0aXZhdGZheHhidWlsbHRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NzkwNDksImV4cCI6MjEwMzU1NTA0OX0.WcnHZLuWMpZYj5PReyiMgvwSx46DRAlvl99o0SmQtAk
+      - key: VITE_GOOGLE_CLIENT_ID
+        value: 16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com
