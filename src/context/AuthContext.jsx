@@ -149,48 +149,31 @@ export const AuthProvider = ({ children }) => {
             callback: async (tokenResponse) => {
               if (tokenResponse?.access_token) {
                 try {
-                  const userInfoRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+                  // Send real Google access_token to backend for server-side verification
+                  const res = await API.post('/auth/google', {
+                    access_token: tokenResponse.access_token,
                   });
-                  const googleProfile = userInfoRes.data;
 
-                  if (googleProfile?.email) {
-                    const res = await API.post('/auth/google', {
-                      email: googleProfile.email,
-                      name: googleProfile.name || googleProfile.email.split('@')[0],
-                      picture: googleProfile.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${googleProfile.sub}`,
-                      sub: googleProfile.sub,
-                    });
-
-                    if (res.data.success) {
-                      localStorage.setItem('dynastore_token', res.data.token);
-                      setToken(res.data.token);
-                      setUser(res.data.user);
-                      resolve(res.data);
-                      return;
-                    }
-                  }
-                } catch (fetchErr) {
-                  console.error('Error fetching real Google profile:', fetchErr);
-                  reject(fetchErr);
-                }
-              } else if (tokenResponse?.error) {
-                console.warn('Google OAuth notice:', tokenResponse.error);
-                // Graceful fallback for origin_mismatch
-                API.post('/auth/google', {
-                  email: 'dynastore2-904758-39q457@gmai.com',
-                  name: 'DynaMasterAdmin',
-                  picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dynastore2',
-                }).then((res) => {
                   if (res.data.success) {
                     localStorage.setItem('dynastore_token', res.data.token);
                     setToken(res.data.token);
                     setUser(res.data.user);
                     resolve(res.data);
-                  } else {
-                    reject(new Error(tokenResponse.error));
+                    return;
                   }
-                }).catch(() => reject(new Error(tokenResponse.error)));
+                } catch (fetchErr) {
+                  console.error('Error verifying Google session on server:', fetchErr);
+                  reject(fetchErr);
+                }
+              } else if (tokenResponse?.error) {
+                console.warn('Google OAuth notice:', tokenResponse.error);
+                if (tokenResponse.error === 'origin_mismatch') {
+                  const originErr = new Error('Google Sign-In is not configured for this website origin. Please contact the site administrator or configure Authorized JavaScript Origins in Google Cloud.');
+                  originErr.code = 'origin_mismatch';
+                  reject(originErr);
+                } else {
+                  reject(new Error(tokenResponse.error));
+                }
               }
             },
           });
@@ -210,21 +193,16 @@ export const AuthProvider = ({ children }) => {
             callback: async (response) => {
               try {
                 if (response.credential) {
-                  const payload = parseJwt(response.credential);
-                  if (payload?.email) {
-                    const res = await API.post('/auth/google', {
-                      email: payload.email,
-                      name: payload.name || payload.email.split('@')[0],
-                      picture: payload.picture,
-                      sub: payload.sub,
-                    });
-                    if (res.data.success) {
-                      localStorage.setItem('dynastore_token', res.data.token);
-                      setToken(res.data.token);
-                      setUser(res.data.user);
-                      resolve(res.data);
-                      return;
-                    }
+                  // Send real Google ID Token JWT to backend for cryptographic verification
+                  const res = await API.post('/auth/google', {
+                    credential: response.credential,
+                  });
+                  if (res.data.success) {
+                    localStorage.setItem('dynastore_token', res.data.token);
+                    setToken(res.data.token);
+                    setUser(res.data.user);
+                    resolve(res.data);
+                    return;
                   }
                 }
               } catch (err) {

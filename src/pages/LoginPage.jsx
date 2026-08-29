@@ -1,33 +1,52 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2 } from 'lucide-react';
+import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import GoogleSignInModal from '../components/GoogleSignInModal.jsx';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
-  const handleGoogleLogin = () => {
-    setShowGoogleModal(true);
+  const handleGoogleLogin = async () => {
+    setAuthError(null);
+    try {
+      setGoogleLoading(true);
+      await loginWithGoogle();
+      toast.success('Signed in with Google successfully!');
+      navigate('/');
+    } catch (err) {
+      console.error('Google Sign-In Error:', err);
+      if (err.code === 'origin_mismatch' || err.message?.includes('origin_mismatch')) {
+        setAuthError('Google Sign-In is not configured for this website origin. Please contact the site administrator.');
+        toast.error('Google Sign-In is not configured for this website origin.');
+      } else {
+        setAuthError(err.message || 'Google Sign-In failed');
+        toast.error(err.message || 'Google Sign-In failed');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setAuthError(null);
     try {
       setLoading(true);
       await login(email, password);
       toast.success('Welcome back to DynaStore!');
       navigate('/');
     } catch (err) {
+      setAuthError(err.formattedMessage || err.message || 'Login failed');
       toast.error(err.formattedMessage || err.message || 'Login failed');
     } finally {
       setLoading(false);
@@ -54,7 +73,15 @@ export default function LoginPage() {
           <p className="text-xs text-slate-400">Log in to access your game library, wallet, and orders</p>
         </div>
 
-        {/* Google Sign In Button */}
+        {/* Error Alert if any */}
+        {authError && (
+          <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <span>{authError}</span>
+          </div>
+        )}
+
+        {/* Real Google Sign In Button */}
         <div>
           <button
             type="button"
@@ -84,7 +111,7 @@ export default function LoginPage() {
                 />
               </svg>
             )}
-            <span>{googleLoading ? 'Signing in with Google...' : 'Continue with Google'}</span>
+            <span>{googleLoading ? 'Connecting with Google...' : 'Continue with Google'}</span>
           </button>
         </div>
 
@@ -151,9 +178,6 @@ export default function LoginPage() {
           </Link>
         </div>
       </motion.div>
-
-      {/* Google Sign In Modal */}
-      <GoogleSignInModal isOpen={showGoogleModal} onClose={() => setShowGoogleModal(false)} />
     </div>
   );
 }
