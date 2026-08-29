@@ -77,7 +77,7 @@ export default function ABAPayModal({
         tran_id: tranId,
         status: '00',
         amount: amount.toFixed(2),
-        req_time: new Date().toISOString().replace(/[-:T.Z]/g, '').slice(0, 14),
+        req_time: new Date().toISOString().replace(/\D/g, '').slice(0, 14),
       });
 
       setPollingStatus('PAID');
