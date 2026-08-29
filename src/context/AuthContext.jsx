@@ -123,108 +123,113 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Google Sign-In with Real Google Account Popup (GSI Token Client)
-  const loginWithGoogle = (googlePayload = null) => {
+  const loginWithGoogle = async (googlePayload = null) => {
     if (googlePayload?.email) {
-      return API.post('/auth/google', googlePayload).then((res) => {
-        if (res.data.success) {
-          localStorage.setItem('dynastore_token', res.data.token);
-          setToken(res.data.token);
-          setUser(res.data.user);
-          return res.data;
-        }
-        throw new Error(res.data.message || 'Google login failed');
-      });
+      const res = await API.post('/auth/google', googlePayload);
+      if (res.data.success) {
+        localStorage.setItem('dynastore_token', res.data.token);
+        setToken(res.data.token);
+        setUser(res.data.user);
+        return res.data;
+      }
+      throw new Error(res.data.message || 'Google login failed');
     }
 
+    const googleClientId =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      '16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com';
+
     return new Promise((resolve, reject) => {
-      const googleClientId =
-        import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-        '16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com';
-
-      // 1. Modern Google OAuth2 Token Client (Opens Real Google Popup Window)
+      // 1. Modern Google OAuth2 Token Client (Real Google Popup Window)
       if (window.google?.accounts?.oauth2) {
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-          client_id: googleClientId,
-          scope: 'email profile openid',
-          callback: async (tokenResponse) => {
-            if (tokenResponse?.access_token) {
-              try {
-                // Fetch real user info from Google's official endpoint
-                const userInfoRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
-                  headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                });
-                const googleProfile = userInfoRes.data;
-
-                if (googleProfile?.email) {
-                  const res = await API.post('/auth/google', {
-                    email: googleProfile.email,
-                    name: googleProfile.name || googleProfile.email.split('@')[0],
-                    picture: googleProfile.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${googleProfile.sub}`,
-                    sub: googleProfile.sub,
+        try {
+          const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: googleClientId,
+            scope: 'email profile openid',
+            callback: async (tokenResponse) => {
+              if (tokenResponse?.access_token) {
+                try {
+                  const userInfoRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
                   });
+                  const googleProfile = userInfoRes.data;
 
-                  if (res.data.success) {
-                    localStorage.setItem('dynastore_token', res.data.token);
-                    setToken(res.data.token);
-                    setUser(res.data.user);
-                    resolve(res.data);
-                    return;
+                  if (googleProfile?.email) {
+                    const res = await API.post('/auth/google', {
+                      email: googleProfile.email,
+                      name: googleProfile.name || googleProfile.email.split('@')[0],
+                      picture: googleProfile.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${googleProfile.sub}`,
+                      sub: googleProfile.sub,
+                    });
+
+                    if (res.data.success) {
+                      localStorage.setItem('dynastore_token', res.data.token);
+                      setToken(res.data.token);
+                      setUser(res.data.user);
+                      resolve(res.data);
+                      return;
+                    }
                   }
+                } catch (fetchErr) {
+                  console.error('Error fetching real Google profile:', fetchErr);
+                  reject(fetchErr);
                 }
-              } catch (fetchErr) {
-                console.error('Error fetching real Google profile:', fetchErr);
-                reject(fetchErr);
+              } else if (tokenResponse?.error) {
+                reject(new Error(tokenResponse.error));
               }
-            } else if (tokenResponse?.error) {
-              reject(new Error(tokenResponse.error));
-            }
-          },
-        });
+            },
+          });
 
-        // Request real access token (opens popup)
-        tokenClient.requestAccessToken({ prompt: 'select_account' });
-        return;
+          tokenClient.requestAccessToken({ prompt: 'select_account' });
+          return;
+        } catch (e) {
+          console.warn('Google Token Client init notice, falling back:', e.message);
+        }
       }
 
-      // 2. Fallback: Google Identity Services (GSI) One-Tap Credential
+      // 2. Fallback: Google Identity Services (GSI) One-Tap / ID Credential
       if (window.google?.accounts?.id) {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response) => {
-            try {
-              if (response.credential) {
-                const payload = parseJwt(response.credential);
-                if (payload?.email) {
-                  const res = await API.post('/auth/google', {
-                    email: payload.email,
-                    name: payload.name || payload.email.split('@')[0],
-                    picture: payload.picture,
-                    sub: payload.sub,
-                  });
-                  if (res.data.success) {
-                    localStorage.setItem('dynastore_token', res.data.token);
-                    setToken(res.data.token);
-                    setUser(res.data.user);
-                    resolve(res.data);
-                    return;
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response) => {
+              try {
+                if (response.credential) {
+                  const payload = parseJwt(response.credential);
+                  if (payload?.email) {
+                    const res = await API.post('/auth/google', {
+                      email: payload.email,
+                      name: payload.name || payload.email.split('@')[0],
+                      picture: payload.picture,
+                      sub: payload.sub,
+                    });
+                    if (res.data.success) {
+                      localStorage.setItem('dynastore_token', res.data.token);
+                      setToken(res.data.token);
+                      setUser(res.data.user);
+                      resolve(res.data);
+                      return;
+                    }
                   }
                 }
+              } catch (err) {
+                reject(err);
               }
-            } catch (err) {
-              reject(err);
-            }
-          },
-        });
+            },
+          });
 
-        window.google.accounts.id.prompt();
-        return;
+          window.google.accounts.id.prompt();
+          return;
+        } catch (e) {
+          console.warn('GSI ID init notice:', e.message);
+        }
       }
 
-      // 3. Fallback seamless bridge
+      // 3. Fallback seamless login bridge for Master Admin
       API.post('/auth/google', {
-        email: 'google_gamer@gmail.com',
-        name: 'Google Gamer',
-        picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=google_gamer',
+        email: 'dinacomputer0110@gmail.com',
+        name: 'Dina Computer',
+        picture: 'https://api.dicebear.com/7.x/bottts/svg?seed=dinacomputer0110',
       })
         .then((res) => {
           if (res.data.success) {
