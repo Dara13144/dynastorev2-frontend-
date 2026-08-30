@@ -12,9 +12,12 @@ import {
   Monitor,
   Loader2,
   Sparkles,
+  ShoppingCart,
+  Trash2,
 } from 'lucide-react';
 import API from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import CutLuyPayModal from '../components/CutLuyPayModal.jsx';
 
@@ -22,6 +25,7 @@ export default function GameDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const { addToCart, removeFromCart, isInCart } = useCart();
   const toast = useToast();
 
   const [product, setProduct] = useState(null);
@@ -287,12 +291,34 @@ export default function GameDetailPage() {
             ) : (
               <div className="space-y-3">
                 <button
+                  type="button"
                   onClick={handleBuyNowDirect}
                   className="w-full py-3.5 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 transition-all bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white shadow-lg shadow-rose-600/30"
                 >
                   <Zap className="w-4 h-4 fill-current" />
                   Buy Now with KHQR (Bakong / All Banks)
                 </button>
+
+                {/* Add to Cart / Remove from Cart */}
+                {isInCart(product.id) ? (
+                  <button
+                    type="button"
+                    onClick={() => removeFromCart(product.id)}
+                    className="w-full py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/40 text-rose-400"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>In Cart - Click to Remove</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => addToCart(product)}
+                    className="w-full py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200 hover:text-brand-cyan hover:border-brand-cyan/40"
+                  >
+                    <ShoppingCart className="w-4 h-4 text-brand-cyan" />
+                    <span>Add to Shopping Cart</span>
+                  </button>
+                )}
               </div>
             )}
 

@@ -81,44 +81,66 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  const isInCart = (productId) => {
+    return cart.items.some(
+      (i) => String(i.productId) === String(productId) || String(i.id) === String(productId)
+    );
+  };
+
   const removeFromCart = async (productId) => {
+    // Optimistic state update for instant UI response
+    const currentItems = cart.items || [];
+    const updated = currentItems.filter(
+      (i) => String(i.productId) !== String(productId) && String(i.id) !== String(productId)
+    );
+    setCart({
+      items: updated,
+      subtotal: updated.reduce((sum, i) => sum + (Number(i.price) || 0), 0),
+      total: updated.reduce((sum, i) => sum + (Number(i.price) || 0), 0),
+    });
+
     if (!isAuthenticated) {
       const local = JSON.parse(localStorage.getItem('dynastore_guest_cart') || '[]');
-      const updated = local.filter((i) => i.productId !== productId);
-      localStorage.setItem('dynastore_guest_cart', JSON.stringify(updated));
-      setCart({
-        items: updated,
-        subtotal: updated.reduce((sum, i) => sum + i.price, 0),
-        total: updated.reduce((sum, i) => sum + i.price, 0),
-      });
-      toast.info('Item removed from cart');
+      const localUpdated = local.filter(
+        (i) => String(i.productId) !== String(productId) && String(i.id) !== String(productId)
+      );
+      localStorage.setItem('dynastore_guest_cart', JSON.stringify(localUpdated));
+      toast.info('Game removed from cart');
       return;
     }
 
     try {
       const res = await API.delete(`/cart/${productId}`);
       if (res.data.success) {
-        toast.info('Item removed from cart');
+        toast.info('Game removed from cart');
         await fetchCart();
       }
     } catch (err) {
-      toast.error(err.formattedMessage || 'Failed to remove item');
+      toast.error(err.formattedMessage || 'Failed to remove game from cart');
+      await fetchCart();
+    }
+  };
+
+  const toggleCart = async (product) => {
+    if (isInCart(product.id)) {
+      await removeFromCart(product.id);
+    } else {
+      await addToCart(product);
     }
   };
 
   const clearCart = async () => {
-    if (!isAuthenticated) {
-      localStorage.removeItem('dynastore_guest_cart');
-      setCart({ items: [], subtotal: 0, total: 0 });
-      return;
-    }
+    localStorage.removeItem('dynastore_guest_cart');
+    setCart({ items: [], subtotal: 0, total: 0 });
 
-    try {
-      await API.delete('/cart');
-      setCart({ items: [], subtotal: 0, total: 0 });
-    } catch (err) {
-      console.error(err);
+    if (isAuthenticated) {
+      try {
+        await API.delete('/cart');
+      } catch (err) {
+        console.error(err);
+      }
     }
+    toast.info('Cart cleared');
   };
 
   return (
@@ -127,8 +149,10 @@ export const CartProvider = ({ children }) => {
         cart,
         itemCount: cart.items.length,
         loading,
+        isInCart,
         addToCart,
         removeFromCart,
+        toggleCart,
         clearCart,
         fetchCart,
       }}

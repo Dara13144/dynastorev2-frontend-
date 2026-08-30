@@ -1,22 +1,35 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Zap, Eye, Monitor } from 'lucide-react';
+import { Zap, Eye, Monitor, ShoppingCart, Trash2, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext.jsx';
 
 export default function GameCard({ product }) {
-  const { addToCart } = useCart();
+  const { addToCart, removeFromCart, isInCart } = useCart();
   const navigate = useNavigate();
 
+  const inCart = isInCart(product.id);
   const originalPrice = Number(product.price);
   const hasDiscount = product.discount_price !== null && product.discount_price !== undefined && Number(product.discount_price) < originalPrice;
   const finalPrice = hasDiscount ? Number(product.discount_price) : originalPrice;
   const discountPercent = hasDiscount ? Math.round(((originalPrice - finalPrice) / originalPrice) * 100) : 0;
 
+  const handleToggleCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (inCart) {
+      removeFromCart(product.id);
+    } else {
+      addToCart(product);
+    }
+  };
+
   const handleBuyNow = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    addToCart(product);
+    if (!inCart) {
+      addToCart(product);
+    }
     navigate('/checkout');
   };
 
@@ -98,13 +111,29 @@ export default function GameCard({ product }) {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Cart Toggle (Add / Remove) */}
             <button
+              type="button"
+              onClick={handleToggleCart}
+              className={`p-2 rounded-xl border transition-all text-xs font-semibold flex items-center justify-center ${
+                inCart
+                  ? 'bg-rose-500/10 border-rose-500/40 text-rose-400 hover:bg-rose-500/20'
+                  : 'bg-white/5 border-white/15 text-slate-300 hover:text-white hover:border-brand-cyan/50 hover:bg-white/10'
+              }`}
+              title={inCart ? 'Remove from Cart' : 'Add to Cart'}
+            >
+              {inCart ? <Trash2 className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
+            </button>
+
+            {/* Buy Now */}
+            <button
+              type="button"
               onClick={handleBuyNow}
-              className="w-full px-4 py-2 rounded-xl text-xs font-bold gradient-btn flex items-center justify-center gap-1.5 shadow-neon-cyan hover:scale-[1.02] transition-transform"
+              className="px-3.5 py-2 rounded-xl text-xs font-bold gradient-btn flex items-center justify-center gap-1 shadow-neon-cyan hover:scale-[1.02] transition-transform"
             >
               <Zap className="w-3.5 h-3.5 fill-current" />
-              Buy Now
+              <span>Buy</span>
             </button>
           </div>
         </div>

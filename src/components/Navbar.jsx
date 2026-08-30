@@ -14,11 +14,14 @@ import {
   X,
   PlusCircle,
   Sparkles,
+  ShoppingCart,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useCart } from '../context/CartContext.jsx';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
+  const { itemCount } = useCart();
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -98,6 +101,20 @@ export default function Navbar() {
               </Link>
             )}
 
+
+            {/* Shopping Cart Button */}
+            <Link
+              to="/cart"
+              className="relative p-2 rounded-xl bg-brand-surface border border-white/10 hover:border-brand-cyan/50 text-slate-300 hover:text-white transition-all shadow-sm group"
+              title="Shopping Cart"
+            >
+              <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform text-slate-200 group-hover:text-brand-cyan" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500 text-white font-bold text-[10px] flex items-center justify-center shadow-lg animate-pulse">
+                  {itemCount}
+                </span>
+              )}
+            </Link>
 
             {/* Auth Buttons or User Avatar Menu */}
             {isAuthenticated ? (
@@ -254,6 +271,20 @@ export default function Navbar() {
                 className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200"
               >
                 📂 Categories
+              </Link>
+              <Link
+                to="/cart"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200 flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <ShoppingCart className="w-4 h-4 text-brand-cyan" /> Shopping Cart
+                </span>
+                {itemCount > 0 && (
+                  <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold text-xs">
+                    {itemCount}
+                  </span>
+                )}
               </Link>
               {isAuthenticated && (
                 <Link

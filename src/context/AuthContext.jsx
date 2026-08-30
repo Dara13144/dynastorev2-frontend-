@@ -46,6 +46,9 @@ export const AuthProvider = ({ children }) => {
             localStorage.setItem('dynastore_token', res.data.token);
             setToken(res.data.token);
             setUser(res.data.user);
+            if (window.location.hash && window.location.hash.includes('access_token')) {
+              window.history.replaceState(null, '', window.location.pathname + window.location.search);
+            }
             setLoading(false);
             return;
           }
@@ -122,6 +125,27 @@ export const AuthProvider = ({ children }) => {
     throw new Error(res.data.message || 'Registration failed');
   };
 
+  const ensureGoogleScriptLoaded = () => {
+    return new Promise((resolve) => {
+      if (window.google?.accounts?.oauth2 || window.google?.accounts?.id) {
+        return resolve(window.google);
+      }
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (!existingScript) {
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = () => resolve(window.google);
+        script.onerror = () => resolve(null);
+        document.head.appendChild(script);
+      } else {
+        existingScript.addEventListener('load', () => resolve(window.google));
+        setTimeout(() => resolve(window.google), 2000);
+      }
+    });
+  };
+
   // Google Sign-In with Real Google Account Popup (GSI Token Client)
   const loginWithGoogle = async (googlePayload = null) => {
     if (googlePayload?.email) {
@@ -135,32 +159,13 @@ export const AuthProvider = ({ children }) => {
       throw new Error(res.data.message || 'Google login failed');
     }
 
+    await ensureGoogleScriptLoaded();
+
     const googleClientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
       '16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com';
 
-    // 1. Try Supabase Google OAuth Redirect First (Zero Origin-Mismatch)
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-
-      if (!error && data?.url) {
-        window.location.href = data.url;
-        return;
-      }
-    } catch (sbErr) {
-      console.warn('Supabase OAuth notice, falling back to GIS Token Client:', sbErr.message);
-    }
-
-    // 2. Google Identity Services (GIS) Token Client Popup
+    // Google Identity Services (GIS) Token Client Popup
     return new Promise((resolve, reject) => {
       if (window.google?.accounts?.oauth2) {
         try {
@@ -182,21 +187,25 @@ export const AuthProvider = ({ children }) => {
                     resolve(res.data);
                     return;
                   }
+                  reject(new Error(res.data.message || 'Verification failed'));
                 } catch (fetchErr) {
                   console.error('Error verifying Google session on server:', fetchErr);
                   reject(fetchErr);
                 }
               } else if (tokenResponse?.error) {
                 console.warn('Google OAuth notice:', tokenResponse.error);
-                if (tokenResponse.error === 'origin_mismatch') {
-                  const originErr = new Error('Google Sign-In is not configured for this website origin. Please register ' + window.location.origin + ' in Google Cloud Console.');
-                  originErr.code = 'origin_mismatch';
-                  reject(originErr);
+                if (tokenResponse.error === 'access_denied') {
+                  reject(new Error('Google Sign-In was cancelled by user.'));
+                } else if (tokenResponse.error === 'origin_mismatch') {
+                  reject(new Error('Google Sign-In origin mismatch. Please add ' + window.location.origin + ' to Google Cloud Authorized JavaScript Origins.'));
                 } else {
                   reject(new Error(tokenResponse.error));
                 }
               }
             },
+            error_callback: (err) => {
+              reject(new Error(err.message || 'Google Sign-In popup error'));
+            }
           });
 
           tokenClient.requestAccessToken({ prompt: 'select_account' });
@@ -206,7 +215,7 @@ export const AuthProvider = ({ children }) => {
         }
       }
 
-      // 3. Fallback: Google Identity Services (GSI) One-Tap / ID Credential
+      // Fallback: Google Identity Services (GSI) One-Tap / ID Credential
       if (window.google?.accounts?.id) {
         try {
           window.google.accounts.id.initialize({
@@ -225,6 +234,7 @@ export const AuthProvider = ({ children }) => {
                     return;
                   }
                 }
+                reject(new Error('Failed to verify Google credential'));
               } catch (err) {
                 reject(err);
               }

@@ -20,17 +20,20 @@ export default function LoginPage() {
     setAuthError(null);
     try {
       setGoogleLoading(true);
-      await loginWithGoogle();
-      toast.success('Signed in with Google successfully!');
-      navigate('/');
+      const res = await loginWithGoogle(null);
+      if (res?.success) {
+        toast.success(`Welcome back, ${res.user?.username || 'Gamer'}!`);
+        if (res.user?.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
     } catch (err) {
-      console.error('Google Sign-In Error:', err);
-      if (err.code === 'origin_mismatch' || err.message?.includes('origin_mismatch')) {
-        setAuthError('Google Sign-In is not configured for this website origin. Please contact the site administrator.');
-        toast.error('Google Sign-In is not configured for this website origin.');
-      } else {
-        setAuthError(err.message || 'Google Sign-In failed');
-        toast.error(err.message || 'Google Sign-In failed');
+      console.warn('Google Sign-In notice:', err.message);
+      if (!err.message?.includes('cancelled')) {
+        setAuthError(err.message || 'Google login failed');
+        toast.error(err.message || 'Google login failed');
       }
     } finally {
       setGoogleLoading(false);
@@ -82,12 +85,12 @@ export default function LoginPage() {
         )}
 
         {/* Real Google Sign In Button */}
-        <div>
+        <div className="space-y-2">
           <button
             type="button"
             disabled={googleLoading || loading}
             onClick={handleGoogleLogin}
-            className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
           >
             {googleLoading ? (
               <Loader2 className="w-4 h-4 animate-spin text-slate-900" />
@@ -111,7 +114,9 @@ export default function LoginPage() {
                 />
               </svg>
             )}
-            <span>{googleLoading ? 'Connecting with Google...' : 'Continue with Google'}</span>
+            <span className="group-hover:text-black">
+              {googleLoading ? 'Connecting with Google...' : 'Continue with Google'}
+            </span>
           </button>
         </div>
 

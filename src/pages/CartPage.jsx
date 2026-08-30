@@ -88,11 +88,13 @@ export default function CartPage() {
                   ${Number(item.price).toFixed(2)}
                 </span>
                 <button
-                  onClick={() => removeFromCart(item.productId)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
-                  title="Remove item"
+                  type="button"
+                  onClick={() => removeFromCart(item.productId || item.id)}
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/50 transition-all flex items-center gap-1.5 shadow-sm group"
+                  title="Delete game from cart"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                  <span>Delete</span>
                 </button>
               </div>
             </div>
