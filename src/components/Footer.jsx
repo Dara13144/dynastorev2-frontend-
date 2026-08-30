@@ -1,8 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2, ShieldCheck, Zap, Download, CreditCard } from 'lucide-react';
+import { ShieldCheck, Download, CreditCard } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function Footer() {
+  const { t, isKhmer } = useLanguage();
+
   return (
     <footer className="border-t border-white/10 bg-background-card/90 pt-16 pb-12 mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,16 +28,16 @@ export default function Footer() {
               </div>
             </Link>
             <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
-              Cambodia's premier digital game store for downloadable PC games, standalone releases, modpacks, and gaming assets. Fast, secure checkout via ABA PayWay KHQR.
+              {t('footer.tagline')}
             </p>
             {/* Payment Badges */}
             <div className="pt-2">
               <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold block mb-2">
-                Official Payment Gateway Partner
+                {isKhmer ? 'ប្រព័ន្ធទូទាត់ប្រាក់ផ្លូវការ' : 'Official Payment Partner'}
               </span>
               <div className="inline-flex items-center gap-3 px-4 py-2 rounded-xl bg-slate-900/80 border border-cyan-500/30 shadow-md">
-                <span className="text-xs font-bold text-white tracking-wide">ABA PayWay</span>
-                <span className="text-xs text-cyan-400 font-semibold">• KHQR & Cards</span>
+                <span className="text-xs font-bold text-white tracking-wide">Bakong KHQR</span>
+                <span className="text-xs text-cyan-400 font-semibold">• All Banks & Cards</span>
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
               </div>
             </div>
@@ -42,52 +45,52 @@ export default function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">Navigation</h4>
+            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">{t('footer.quickLinks')}</h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
-              <li><Link to="/games" className="hover:text-brand-cyan transition-colors">All Games</Link></li>
-              <li><Link to="/categories" className="hover:text-brand-cyan transition-colors">Categories</Link></li>
-              <li><Link to="/wallet" className="hover:text-brand-cyan transition-colors">Wallet Top-up</Link></li>
-              <li><Link to="/downloads" className="hover:text-brand-cyan transition-colors">My Downloads</Link></li>
+              <li><Link to="/games" className="hover:text-brand-cyan transition-colors">{t('nav.exploreGames')}</Link></li>
+              <li><Link to="/categories" className="hover:text-brand-cyan transition-colors">{t('nav.categories')}</Link></li>
+              <li><Link to="/wallet" className="hover:text-brand-cyan transition-colors">{t('nav.wallet')}</Link></li>
+              <li><Link to="/downloads" className="hover:text-brand-cyan transition-colors">{t('nav.downloads')}</Link></li>
             </ul>
           </div>
 
           {/* Popular Categories */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">Top Genres</h4>
+            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">{isKhmer ? 'ប្រភេទហ្គេមល្បីៗ' : 'Top Genres'}</h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
-              <li><Link to="/games?category=action" className="hover:text-brand-cyan transition-colors">Action & Combat</Link></li>
-              <li><Link to="/games?category=rpg" className="hover:text-brand-cyan transition-colors">Role Playing (RPG)</Link></li>
-              <li><Link to="/games?category=racing" className="hover:text-brand-cyan transition-colors">Racing & Drift</Link></li>
-              <li><Link to="/games?category=minecraft" className="hover:text-brand-cyan transition-colors">Sandbox & Mods</Link></li>
+              <li><Link to="/games?category=action" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'ហ្គេមវាយប្រហារ & សកម្មភាព' : 'Action & Combat'}</Link></li>
+              <li><Link to="/games?category=rpg" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'ហ្គេមផ្សងព្រេង RPG' : 'Role Playing (RPG)'}</Link></li>
+              <li><Link to="/games?category=racing" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'ហ្គេមប្រណាំងឡាន' : 'Racing & Drift'}</Link></li>
+              <li><Link to="/games?category=minecraft" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'Minecraft & Modpacks' : 'Sandbox & Mods'}</Link></li>
             </ul>
           </div>
 
           {/* Trust & Guarantees */}
           <div>
-            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">Store Guarantees</h4>
+            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">{isKhmer ? 'ការធានារបស់ហាង' : 'Store Guarantees'}</h4>
             <ul className="space-y-3 text-xs text-slate-400">
               <li className="flex items-start gap-2">
                 <Download className="w-4 h-4 text-brand-cyan shrink-0 mt-0.5" />
-                <span>Instant signed direct download links after payment verification.</span>
+                <span>{t('home.instantDeliveryDesc')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                <span>Verified malware-free game archives and packages.</span>
+                <span>{t('home.verifiedFilesDesc')}</span>
               </li>
               <li className="flex items-start gap-2">
                 <CreditCard className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-                <span>Secure Cambodian Riel (KHR) and USD checkout via ABA PayWay.</span>
+                <span>{t('home.khqrPaymentDesc')}</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
-          <p>© {new Date().getFullYear()} DynaStore Cambodia. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} DynaStore Cambodia. {t('footer.rightsReserved')}</p>
           <div className="flex items-center gap-6">
-            <span>Terms of Service</span>
-            <span>Privacy Policy</span>
-            <span>Refund Policy</span>
+            <span>{isKhmer ? 'លក្ខខណ្ឌប្រើប្រាស់' : 'Terms of Service'}</span>
+            <span>{isKhmer ? 'គោលការណ៍ឯកជនភាព' : 'Privacy Policy'}</span>
+            <span>{isKhmer ? 'គោលការណ៍សងប្រាក់' : 'Refund Policy'}</span>
           </div>
         </div>
       </div>

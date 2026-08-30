@@ -3,9 +3,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Zap, Eye, Monitor, ShoppingCart, Trash2, Check } from 'lucide-react';
 import { useCart } from '../context/CartContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
 
 export default function GameCard({ product }) {
   const { addToCart, removeFromCart, isInCart } = useCart();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const inCart = isInCart(product.id);

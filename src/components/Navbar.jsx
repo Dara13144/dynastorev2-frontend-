@@ -18,10 +18,13 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
+import { useLanguage } from '../context/LanguageContext.jsx';
+import LanguageSwitcher from './LanguageSwitcher.jsx';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
   const { itemCount } = useCart();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,7 +45,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-4">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link to="/" className="flex items-center gap-3 group shrink-0">
             <img
               src="/logo.png"
               alt="DynaStore"
@@ -67,7 +70,7 @@ export default function Navbar() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search games, developers, modpacks..."
+              placeholder={t('nav.searchPlaceholder')}
               className="w-full bg-background/80 text-sm text-slate-200 placeholder-slate-500 rounded-full pl-10 pr-4 py-2 border border-white/10 focus:outline-none focus:border-brand-cyan/60 focus:ring-1 focus:ring-brand-cyan/40 transition-all"
             />
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 pointer-events-none" />
@@ -77,15 +80,20 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-6 text-sm font-medium text-slate-300">
             <Link to="/games" className="hover:text-brand-cyan transition-colors flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-brand-cyan" />
-              Explore Games
+              <span>{t('nav.exploreGames')}</span>
             </Link>
             <Link to="/categories" className="hover:text-brand-cyan transition-colors">
-              Categories
+              <span>{t('nav.categories')}</span>
             </Link>
           </div>
 
-          {/* User Controls & Cart */}
-          <div className="flex items-center gap-3">
+          {/* User Controls & Language */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            {/* Language Switcher */}
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
+
             {/* Wallet Pill (if authenticated) */}
             {isAuthenticated && (
               <Link
@@ -94,19 +102,18 @@ export default function Navbar() {
               >
                 <Wallet className="w-4 h-4 text-brand-cyan group-hover:scale-110 transition-transform" />
                 <div className="text-xs">
-                  <span className="text-slate-400 mr-1">Balance:</span>
+                  <span className="text-slate-400 mr-1">{t('nav.balance')}:</span>
                   <span className="font-bold text-white">${Number(user?.balance || 0).toFixed(2)}</span>
                 </div>
                 <PlusCircle className="w-3.5 h-3.5 text-brand-cyan opacity-80" />
               </Link>
             )}
 
-
             {/* Shopping Cart Button */}
             <Link
               to="/cart"
               className="relative p-2 rounded-xl bg-brand-surface border border-white/10 hover:border-brand-cyan/50 text-slate-300 hover:text-white transition-all shadow-sm group"
-              title="Shopping Cart"
+              title={t('nav.cart')}
             >
               <ShoppingCart className="w-5 h-5 group-hover:scale-110 transition-transform text-slate-200 group-hover:text-brand-cyan" />
               {itemCount > 0 && (
@@ -147,7 +154,7 @@ export default function Navbar() {
                         <p className="font-semibold text-white truncate">{user?.username}</p>
                         <p className="text-xs text-slate-400 truncate">{user?.email}</p>
                         <div className="mt-2 flex items-center justify-between text-xs pt-2 border-t border-white/5">
-                          <span className="text-slate-400">Role</span>
+                          <span className="text-slate-400">{t('nav.role')}</span>
                           <span className="px-2 py-0.5 rounded bg-brand-purple/20 text-brand-purple border border-brand-purple/30 font-bold uppercase text-[10px]">
                             {user?.role}
                           </span>
@@ -160,7 +167,7 @@ export default function Navbar() {
                           className="flex items-center gap-2.5 px-4 py-2.5 text-amber-400 hover:bg-amber-500/10 transition-colors font-medium"
                         >
                           <ShieldAlert className="w-4 h-4" />
-                          Admin Console
+                          {t('nav.adminConsole')}
                         </Link>
                       )}
 
@@ -169,7 +176,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
                         <User className="w-4 h-4 text-cyan-400" />
-                        My Profile
+                        {t('nav.profile')}
                       </Link>
 
                       <Link
@@ -177,7 +184,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
                         <Download className="w-4 h-4 text-emerald-400" />
-                        My Downloads
+                        {t('nav.downloads')}
                       </Link>
 
                       <Link
@@ -185,7 +192,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
                         <Package className="w-4 h-4 text-purple-400" />
-                        My Orders
+                        {t('nav.orders')}
                       </Link>
 
                       <Link
@@ -193,7 +200,7 @@ export default function Navbar() {
                         className="flex items-center gap-2.5 px-4 py-2.5 text-slate-300 hover:text-white hover:bg-white/5 transition-colors"
                       >
                         <Wallet className="w-4 h-4 text-brand-cyan" />
-                        Wallet & Deposit
+                        {t('nav.wallet')}
                       </Link>
 
                       <div className="border-t border-white/10 mt-1 pt-1">
@@ -202,7 +209,7 @@ export default function Navbar() {
                           className="w-full flex items-center gap-2.5 px-4 py-2 text-rose-400 hover:bg-rose-500/10 transition-colors text-left"
                         >
                           <LogOut className="w-4 h-4" />
-                          Sign Out
+                          {t('nav.logout')}
                         </button>
                       </div>
                     </motion.div>
@@ -215,13 +222,13 @@ export default function Navbar() {
                   to="/login"
                   className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold text-slate-300 hover:text-white hover:bg-white/5 transition-all"
                 >
-                  Log In
+                  {t('nav.login')}
                 </Link>
                 <Link
                   to="/register"
                   className="px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold gradient-btn"
                 >
-                  Register
+                  {t('nav.register')}
                 </Link>
               </div>
             )}
@@ -246,12 +253,18 @@ export default function Navbar() {
             exit={{ opacity: 0, height: 0 }}
             className="lg:hidden border-t border-white/10 bg-background-card px-4 py-4 space-y-3"
           >
+            {/* Mobile Language Switcher */}
+            <div className="flex items-center justify-between px-2 pb-2 border-b border-white/10">
+              <span className="text-xs text-slate-400 font-semibold">{t('nav.language')}:</span>
+              <LanguageSwitcher />
+            </div>
+
             <form onSubmit={handleSearchSubmit} className="relative">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search games..."
+                placeholder={t('nav.searchPlaceholder')}
                 className="w-full bg-background text-sm rounded-xl pl-10 pr-4 py-2.5 border border-white/10 focus:outline-none focus:border-brand-cyan"
               />
               <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
@@ -261,16 +274,16 @@ export default function Navbar() {
               <Link
                 to="/games"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200"
+                className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200 flex items-center gap-2"
               >
-                🎮 Explore Games
+                <span>🎮</span> {t('nav.exploreGames')}
               </Link>
               <Link
                 to="/categories"
                 onClick={() => setMobileMenuOpen(false)}
-                className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200"
+                className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200 flex items-center gap-2"
               >
-                📂 Categories
+                <span>📂</span> {t('nav.categories')}
               </Link>
               <Link
                 to="/cart"
@@ -278,7 +291,7 @@ export default function Navbar() {
                 className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200 flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
-                  <ShoppingCart className="w-4 h-4 text-brand-cyan" /> Shopping Cart
+                  <ShoppingCart className="w-4 h-4 text-brand-cyan" /> {t('nav.cart')}
                 </span>
                 {itemCount > 0 && (
                   <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white font-bold text-xs">
@@ -293,7 +306,7 @@ export default function Navbar() {
                   className="px-3 py-2 rounded-lg bg-brand-surface border border-brand-cyan/20 text-brand-cyan flex items-center justify-between"
                 >
                   <span className="flex items-center gap-2">
-                    <Wallet className="w-4 h-4" /> Wallet Balance
+                    <Wallet className="w-4 h-4" /> {t('nav.wallet')}
                   </span>
                   <span className="font-bold text-white">${Number(user?.balance || 0).toFixed(2)}</span>
                 </Link>

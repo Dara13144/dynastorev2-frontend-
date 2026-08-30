@@ -29,8 +29,9 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'system-ui', 'sans-serif'],
-        display: ['Outfit', 'sans-serif'],
+        sans: ['Outfit', 'Kantumruy Pro', 'Inter', 'system-ui', 'sans-serif'],
+        display: ['Outfit', 'Kantumruy Pro', 'sans-serif'],
+        khmer: ['Kantumruy Pro', 'sans-serif'],
       },
       boxShadow: {
         'neon-cyan': '0 0 20px -3px rgba(0, 240, 255, 0.35)',
