@@ -4,8 +4,6 @@ import { motion } from 'framer-motion';
 import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
-import GoogleSignInModal from '../components/GoogleSignInModal.jsx';
-
 export default function RegisterPage() {
   const { register, loginWithGoogle } = useAuth();
   const toast = useToast();
@@ -18,10 +16,29 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
 
   const handleGoogleLogin = async () => {
-    setShowGoogleModal(true);
+    setAuthError(null);
+    try {
+      setGoogleLoading(true);
+      const res = await loginWithGoogle();
+      if (res?.success) {
+        toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
+        if (res.user?.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+      }
+    } catch (err) {
+      console.warn('Google Sign-In notice:', err.message);
+      if (!err.message?.toLowerCase().includes('closed') && !err.message?.toLowerCase().includes('cancelled')) {
+        setAuthError(err.message || 'Google login failed');
+        toast.error(err.message || 'Google login failed');
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -202,12 +219,6 @@ export default function RegisterPage() {
           </Link>
         </div>
       </motion.div>
-
-      {/* Google Sign-In Selection & Popup Modal */}
-      <GoogleSignInModal
-        isOpen={showGoogleModal}
-        onClose={() => setShowGoogleModal(false)}
-      />
     </div>
   );
 }
