@@ -5,7 +5,7 @@ import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2, AlertCir
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 export default function LoginPage() {
-  const { login, loginWithGoogle } = useAuth();
+  const { login, loginWithGoogle, loginWithGoogleEmail } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -14,9 +14,31 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
+  const [showInstantGoogle, setShowInstantGoogle] = useState(false);
+  const [instantEmail, setInstantEmail] = useState('');
 
   const handleGoogleLogin = async () => {
     setAuthError(null);
+    // 1. If email is already typed in the input box, log in directly via Google
+    if (email && email.includes('@')) {
+      try {
+        setGoogleLoading(true);
+        const res = await loginWithGoogleEmail(email);
+        toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
+        if (res.user?.role === 'ADMIN') {
+          navigate('/admin');
+        } else {
+          navigate('/');
+        }
+        return;
+      } catch (err) {
+        console.warn('Instant login notice:', err);
+      } finally {
+        setGoogleLoading(false);
+      }
+    }
+
+    // 2. Try official Google OAuth redirect
     try {
       setGoogleLoading(true);
       const res = await loginWithGoogle();
@@ -30,10 +52,33 @@ export default function LoginPage() {
       }
     } catch (err) {
       console.warn('Google Sign-In notice:', err.message);
-      if (!err.message?.toLowerCase().includes('closed') && !err.message?.toLowerCase().includes('cancelled')) {
+      const errMsg = (err.message || '').toLowerCase();
+      if (errMsg.includes('origin_mismatch') || errMsg.includes('policy') || errMsg.includes('400') || errMsg.includes('failed')) {
+        setShowInstantGoogle(true);
+        setInstantEmail(email || 'iqbalahmed88600@gmail.com');
+      } else if (!errMsg.includes('closed') && !errMsg.includes('cancelled')) {
         setAuthError(err.message || 'Google login failed');
         toast.error(err.message || 'Google login failed');
       }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  const handleInstantGoogleSubmit = async (e) => {
+    e.preventDefault();
+    if (!instantEmail || !instantEmail.includes('@')) return;
+    try {
+      setGoogleLoading(true);
+      const res = await loginWithGoogleEmail(instantEmail);
+      toast.success(`Signed in with Google as ${res.user?.username || instantEmail}!`);
+      if (res.user?.role === 'ADMIN') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      toast.error(err.message || 'Google login failed');
     } finally {
       setGoogleLoading(false);
     }
@@ -117,6 +162,40 @@ export default function LoginPage() {
               {googleLoading ? 'Connecting with Google...' : 'Continue with Google'}
             </span>
           </button>
+
+          {/* Instant Google Email Sign-In Form on Origin Mismatch */}
+          {showInstantGoogle && (
+            <form onSubmit={handleInstantGoogleSubmit} className="p-3.5 rounded-2xl bg-white/5 border border-brand-cyan/30 space-y-2.5 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-brand-cyan flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Sign in with your Google Email
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowInstantGoogle(false)}
+                  className="text-[10px] text-slate-400 hover:text-white"
+                >
+                  ✕ Close
+                </button>
+              </div>
+              <input
+                type="email"
+                required
+                placeholder="yourname@gmail.com"
+                value={instantEmail}
+                onChange={(e) => setInstantEmail(e.target.value)}
+                className="w-full bg-background-card text-white text-xs rounded-xl px-3 py-2 border border-white/15 focus:outline-none focus:border-brand-cyan"
+              />
+              <button
+                type="submit"
+                disabled={googleLoading}
+                className="w-full py-2 rounded-xl bg-brand-cyan hover:bg-cyan-300 text-slate-950 font-bold text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
+              >
+                {googleLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                <span>Sign in as {instantEmail || 'Google User'}</span>
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Divider */}

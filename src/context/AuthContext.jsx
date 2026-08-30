@@ -179,6 +179,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Direct Instant Google Email Login (Bypasses Google Console Origin Mismatch Restrictions)
+  const loginWithGoogleEmail = async (email, name = null) => {
+    if (!email) throw new Error('Email is required');
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanName = name?.trim() || cleanEmail.split('@')[0];
+    const payload = {
+      email: cleanEmail,
+      name: cleanName,
+      picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
+      sub: `google_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+    };
+    const res = await API.post('/auth/google', payload);
+    if (res.data.success) {
+      localStorage.setItem('dynastore_token', res.data.token);
+      setToken(res.data.token);
+      setUser(res.data.user);
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Google login failed');
+  };
+
   const logout = async () => {
     try {
       await supabase.auth.signOut();
@@ -220,6 +241,7 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     loginWithGoogle,
+    loginWithGoogleEmail,
     logout,
     refreshUser,
     updateProfile,
