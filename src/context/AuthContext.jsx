@@ -185,10 +185,11 @@ export const AuthProvider = ({ children }) => {
             client_id: googleClientId,
             scope: 'email profile openid',
             callback: async (tokenResponse) => {
-              if (tokenResponse?.access_token) {
+              if (tokenResponse?.access_token || tokenResponse?.code) {
                 try {
                   const res = await API.post('/auth/google', {
                     access_token: tokenResponse.access_token,
+                    code: tokenResponse.code,
                   });
                   if (res.data.success) {
                     localStorage.setItem('dynastore_token', res.data.token);
@@ -236,7 +237,7 @@ export const AuthProvider = ({ children }) => {
     // 3. Fallback: Google Identity Services (GSI) One-Tap / ID Credential
     if (window.google?.accounts?.id) {
       try {
-        return await new Promise((resolve, reject) => {
+        const gsiResult = await new Promise((resolve, reject) => {
           window.google.accounts.id.initialize({
             client_id: googleClientId,
             callback: async (response) => {
@@ -259,14 +260,38 @@ export const AuthProvider = ({ children }) => {
               }
             },
           });
-          window.google.accounts.id.prompt();
+          window.google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              resolve(null);
+            }
+          });
         });
+        if (gsiResult) return gsiResult;
       } catch (e) {
         console.warn('GSI ID init notice:', e.message);
       }
     }
 
-    throw new Error('Google Identity Services SDK is not loaded. Please use your Google Email to sign in.');
+    // 4. Fallback: Supabase Hosted Google OAuth
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+      if (data?.url) {
+        window.location.href = data.url;
+        return { redirect: true, message: 'Redirecting to Google Sign-In...' };
+      }
+      if (error) {
+        console.warn('Supabase OAuth notice:', error.message);
+      }
+    } catch (supaErr) {
+      console.warn('Supabase OAuth notice:', supaErr.message);
+    }
+
+    throw new Error('Google Sign-In popup could not open. Please use your Google Email below.');
   };
 
   // Direct Instant Google Email Login (Bypasses Google Console Origin Mismatch Restrictions)

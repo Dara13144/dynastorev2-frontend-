@@ -42,6 +42,9 @@ export default function LoginPage() {
     try {
       setGoogleLoading(true);
       const res = await loginWithGoogle();
+      if (res?.redirect) {
+        return; // Redirecting to OAuth provider
+      }
       if (res?.success) {
         toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
         if (res.user?.role === 'ADMIN') {
@@ -53,9 +56,9 @@ export default function LoginPage() {
     } catch (err) {
       console.warn('Google Sign-In notice:', err.message);
       const errMsg = (err.message || '').toLowerCase();
-      if (errMsg.includes('origin_mismatch') || errMsg.includes('policy') || errMsg.includes('400') || errMsg.includes('failed')) {
+      if (errMsg.includes('origin_mismatch') || errMsg.includes('policy') || errMsg.includes('400') || errMsg.includes('failed') || errMsg.includes('could not open') || errMsg.includes('not loaded')) {
         setShowInstantGoogle(true);
-        setInstantEmail(email || 'iqbalahmed88600@gmail.com');
+        setInstantEmail(email || '');
       } else if (!errMsg.includes('closed') && !errMsg.includes('cancelled')) {
         setAuthError(err.message || 'Google login failed');
         toast.error(err.message || 'Google login failed');

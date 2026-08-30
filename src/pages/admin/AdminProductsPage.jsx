@@ -31,6 +31,7 @@ export default function AdminProductsPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
+  const [uploadingScreenshots, setUploadingScreenshots] = useState(false);
   const [uploadingGameFile, setUploadingGameFile] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
   const toast = useToast();
@@ -47,6 +48,7 @@ export default function AdminProductsPage() {
     developer: '',
     publisher: 'DynaPublishing',
     cover_image: '',
+    screenshots: [],
     file_path: '',
     file_name: '',
     file_size: '',
@@ -87,10 +89,11 @@ export default function AdminProductsPage() {
       version: 'v1.0.0',
       developer: '',
       publisher: 'DynaPublishing',
-      cover_image: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800',
-      file_path: 'games/new_game.zip',
-      file_name: 'game_setup.zip',
-      file_size: '2.5 GB',
+      cover_image: '',
+      screenshots: [],
+      file_path: '',
+      file_name: '',
+      file_size: '',
       is_published: true,
     });
     setModalOpen(true);
@@ -110,6 +113,7 @@ export default function AdminProductsPage() {
       developer: p.developer || '',
       publisher: p.publisher || '',
       cover_image: p.cover_image || '',
+      screenshots: Array.isArray(p.screenshots) ? p.screenshots : [],
       file_path: p.file_path || '',
       file_name: p.file_name || '',
       file_size: p.file_size || '',
@@ -157,8 +161,9 @@ export default function AdminProductsPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (res.data.success && res.data.publicUrl) {
-        setFormData((prev) => ({ ...prev, cover_image: res.data.publicUrl }));
+      if (res.data.success && (res.data.publicUrl || res.data.filePath)) {
+        const imageUrl = res.data.publicUrl || res.data.filePath;
+        setFormData((prev) => ({ ...prev, cover_image: imageUrl }));
         toast.success('Cover image uploaded successfully!');
       } else {
         toast.error('Failed to retrieve uploaded image URL');
@@ -168,6 +173,45 @@ export default function AdminProductsPage() {
     } finally {
       setUploadingCover(false);
     }
+  };
+
+  const handleScreenshotsUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    try {
+      setUploadingScreenshots(true);
+      for (const file of files) {
+        if (!file.type.startsWith('image/')) continue;
+        const data = new FormData();
+        data.append('file', file);
+        data.append('bucket', 'product-images');
+
+        const res = await API.post('/admin/upload', data, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (res.data.success && (res.data.publicUrl || res.data.filePath)) {
+          const imgUrl = res.data.publicUrl || res.data.filePath;
+          setFormData((prev) => ({
+            ...prev,
+            screenshots: [...(prev.screenshots || []), imgUrl],
+          }));
+        }
+      }
+      toast.success('Screenshot(s) uploaded successfully!');
+    } catch (err) {
+      toast.error(err.formattedMessage || 'Screenshot upload failed');
+    } finally {
+      setUploadingScreenshots(false);
+    }
+  };
+
+  const removeScreenshot = (indexToRemove) => {
+    setFormData((prev) => ({
+      ...prev,
+      screenshots: (prev.screenshots || []).filter((_, i) => i !== indexToRemove),
+    }));
   };
 
   const handleGameFileUpload = async (e) => {
@@ -537,6 +581,55 @@ export default function AdminProductsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              {/* Game Screenshots Gallery Uploader */}
+              <div className="p-4 rounded-2xl bg-black/30 border border-white/10 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="text-slate-300 font-semibold block">Game Screenshots & Gallery</label>
+                    <span className="text-[11px] text-slate-400">Upload in-game screenshots to showcase gameplay</span>
+                  </div>
+                  <label className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-xl bg-brand-surface border border-brand-cyan/40 hover:border-brand-cyan hover:bg-brand-cyan/10 cursor-pointer text-brand-cyan font-bold transition-all text-xs shrink-0">
+                    {uploadingScreenshots ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Upload className="w-3.5 h-3.5" />
+                    )}
+                    <span>{uploadingScreenshots ? 'Uploading...' : 'Upload Screenshots'}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      disabled={uploadingScreenshots}
+                      onChange={handleScreenshotsUpload}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
+
+                {/* Thumbnails Grid */}
+                {formData.screenshots && formData.screenshots.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+                    {formData.screenshots.map((sUrl, idx) => (
+                      <div key={idx} className="relative aspect-video rounded-xl overflow-hidden bg-black/40 border border-white/10 group">
+                        <img src={sUrl} alt={`Screenshot ${idx + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeScreenshot(idx)}
+                          className="absolute top-1 right-1 p-1 rounded-md bg-rose-600/90 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="Delete screenshot"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-3 text-center border border-dashed border-white/10 rounded-xl text-slate-500 text-[11px]">
+                    No screenshots added yet. Upload PNG/JPG images or paste image URLs.
+                  </div>
+                )}
               </div>
 
               {/* Private Game Storage File & Download Source System */}
