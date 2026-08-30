@@ -193,10 +193,11 @@ export const AuthProvider = ({ children }) => {
                   reject(fetchErr);
                 }
               } else if (tokenResponse?.error) {
-                console.warn('Google OAuth notice:', tokenResponse.error);
-                if (tokenResponse.error === 'access_denied') {
-                  reject(new Error('Google Sign-In was cancelled by user.'));
-                } else if (tokenResponse.error === 'origin_mismatch') {
+                const errType = tokenResponse.error;
+                if (errType === 'access_denied' || errType === 'popup_closed' || errType === 'popup_closed_by_user') {
+                  resolve({ cancelled: true, message: 'Google Sign-In popup was closed.' });
+                  return;
+                } else if (errType === 'origin_mismatch') {
                   reject(new Error('Google Sign-In origin mismatch. Please add ' + window.location.origin + ' to Google Cloud Authorized JavaScript Origins.'));
                 } else {
                   reject(new Error(tokenResponse.error));
@@ -204,7 +205,18 @@ export const AuthProvider = ({ children }) => {
               }
             },
             error_callback: (err) => {
-              reject(new Error(err.message || 'Google Sign-In popup error'));
+              const errMsg = err?.message || err?.error || '';
+              if (
+                errMsg.toLowerCase().includes('closed') ||
+                errMsg === 'popup_closed_by_user' ||
+                errMsg === 'popup_blocked_by_browser' ||
+                err?.type === 'popup_closed'
+              ) {
+                console.log('Google Sign-In popup closed by user.');
+                resolve({ cancelled: true, message: 'Google Sign-In popup was closed.' });
+              } else {
+                reject(new Error(errMsg || 'Google Sign-In popup error'));
+              }
             }
           });
 

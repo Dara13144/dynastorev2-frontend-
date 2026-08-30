@@ -76,10 +76,14 @@ export default function GoogleSignInModal({ isOpen, onClose }) {
         } else {
           navigate('/');
         }
+      } else if (res?.cancelled) {
+        console.log('Google Sign-In popup closed by user');
       }
     } catch (err) {
       console.warn('Official Google OAuth notice:', err.message);
-      toast.error(err.message || 'Google Popup failed. Please choose an account below.');
+      if (!err.message?.toLowerCase().includes('closed') && !err.message?.toLowerCase().includes('cancelled')) {
+        toast.error(err.message || 'Google Popup failed. Please choose an account below.');
+      }
     } finally {
       setNativeLoading(false);
     }
