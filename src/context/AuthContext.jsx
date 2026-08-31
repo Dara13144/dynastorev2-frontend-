@@ -105,6 +105,51 @@ export const AuthProvider = ({ children }) => {
         console.warn('Telegram Auto-Login notice:', tgErr.message);
       }
 
+      // Direct URL Hash Parser for Supabase OAuth Callback (#access_token=...)
+      try {
+        if (window.location.hash && window.location.hash.includes('access_token=')) {
+          const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+          const hashAccessToken = hashParams.get('access_token');
+          if (hashAccessToken) {
+            // Decode payload from JWT
+            try {
+              const base64Url = hashAccessToken.split('.')[1];
+              const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+              const jsonPayload = decodeURIComponent(
+                atob(base64)
+                  .split('')
+                  .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+                  .join('')
+              );
+              const jwtData = JSON.parse(jsonPayload);
+              const userMeta = jwtData.user_metadata || {};
+              const userEmail = jwtData.email || userMeta.email;
+
+              if (userEmail) {
+                const payload = {
+                  email: userEmail,
+                  name: userMeta.full_name || userMeta.name || userEmail.split('@')[0],
+                  picture: userMeta.avatar_url || userMeta.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${jwtData.sub || userEmail}`,
+                  sub: jwtData.sub || userMeta.sub || userEmail,
+                };
+
+                const res = await API.post('/auth/google', payload);
+                if (res.data.success) {
+                  handleAuthSuccess(res.data.token, res.data.user);
+                  window.history.replaceState(null, '', window.location.pathname);
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch (jwtErr) {
+              console.warn('Hash JWT decode notice:', jwtErr);
+            }
+          }
+        }
+      } catch (hashErr) {
+        console.warn('Hash parsing notice:', hashErr);
+      }
+
       // Check if user returned from Google OAuth via Supabase or redirect
       try {
         const { data: { session } } = await supabase.auth.getSession();
