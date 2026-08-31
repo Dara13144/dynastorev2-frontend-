@@ -204,7 +204,7 @@ export const AuthProvider = ({ children }) => {
 
     const googleClientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      '731469891455-d7438balkjdf9igbn1452171d6ufta39.apps.googleusercontent.com';
+      '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
 
     // 2. Google Identity Services (GIS) Token Client Popup
     if (window.google?.accounts?.oauth2) {
@@ -347,7 +347,7 @@ export const AuthProvider = ({ children }) => {
     await ensureGoogleScriptLoaded();
     const googleClientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      '731469891455-d7438balkjdf9igbn1452171d6ufta39.apps.googleusercontent.com';
+      '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
 
     if (window.google?.accounts?.id) {
       try {
