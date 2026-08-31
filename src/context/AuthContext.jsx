@@ -426,11 +426,33 @@ export const AuthProvider = ({ children }) => {
     throw new Error(res.data.message || 'Telegram login failed');
   };
 
-  const logout = () => {
-    localStorage.removeItem('dynastore_token');
-    localStorage.removeItem('dynastore_user');
-    setToken(null);
-    setUser(null);
+  const logout = async () => {
+    try {
+      // 1. Clear Local & Session Storage tokens
+      localStorage.removeItem('dynastore_token');
+      localStorage.removeItem('dynastore_user');
+      sessionStorage.clear();
+
+      // 2. Sign out from Supabase Auth
+      try {
+        await supabase.auth.signOut();
+      } catch (e) {}
+
+      // 3. Disable Google auto-select if active
+      try {
+        if (window.google?.accounts?.id?.disableAutoSelect) {
+          window.google.accounts.id.disableAutoSelect();
+        }
+      } catch (e) {}
+
+      // 4. Reset React state
+      setToken(null);
+      setUser(null);
+    } catch (err) {
+      console.warn('Logout notice:', err);
+      setToken(null);
+      setUser(null);
+    }
   };
 
   const refreshUser = async () => {

@@ -322,16 +322,31 @@ export default function Navbar() {
                 )}
               </Link>
               {isAuthenticated && (
-                <Link
-                  to="/wallet"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 rounded-lg bg-brand-surface border border-brand-cyan/20 text-brand-cyan flex items-center justify-between"
-                >
-                  <span className="flex items-center gap-2">
-                    <Wallet className="w-4 h-4" /> {t('nav.wallet')}
-                  </span>
-                  <span className="font-bold text-white">${Number(user?.balance || 0).toFixed(2)}</span>
-                </Link>
+                <>
+                  <Link
+                    to="/wallet"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="px-3 py-2 rounded-lg bg-brand-surface border border-brand-cyan/20 text-brand-cyan flex items-center justify-between"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Wallet className="w-4 h-4" /> {t('nav.wallet')}
+                    </span>
+                    <span className="font-bold text-white">${Number(user?.balance || 0).toFixed(2)}</span>
+                  </Link>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setMobileMenuOpen(false);
+                      await logout();
+                      navigate('/login');
+                    }}
+                    className="w-full px-3 py-2.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-semibold flex items-center justify-center gap-2 transition"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    <span>{t('nav.logout')}</span>
+                  </button>
+                </>
               )}
             </div>
           </motion.div>
