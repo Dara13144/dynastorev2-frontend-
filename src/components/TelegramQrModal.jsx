@@ -162,23 +162,23 @@ export default function TelegramQrModal({ isOpen, onClose, onSuccess }) {
 
         {/* Header */}
         <div className="space-y-1.5 pt-1">
-          <div className="w-12 h-12 rounded-2xl bg-[#229ED9]/15 border border-[#229ED9]/40 flex items-center justify-center mx-auto text-[#229ED9] shadow-[0_0_20px_rgba(34,158,217,0.3)]">
+          <div className="w-12 h-12 rounded-2xl bg-[#24A1DE]/15 border border-[#24A1DE]/40 flex items-center justify-center mx-auto text-[#24A1DE] shadow-[0_0_20px_rgba(36,161,222,0.35)]">
             <Send className="w-6 h-6 -rotate-12" />
           </div>
-          <h3 className="text-lg font-black text-white font-display">
+          <h3 className="text-xl font-black text-white font-display">
             Scan with Telegram
           </h3>
           <p className="text-xs text-slate-400">
-            Open Telegram Camera or QR Scanner on your phone to login instantly
+            Open Telegram on your phone ➔ Settings ➔ Devices ➔ <b>Link Desktop Device</b>
           </p>
         </div>
 
-        {/* QR Box Container */}
-        <div className="relative mx-auto w-52 h-52 rounded-2xl bg-white p-3.5 shadow-xl flex items-center justify-center border-4 border-[#229ED9]/40 overflow-hidden">
+        {/* Official Telegram Styled QR Box Container */}
+        <div className="relative mx-auto w-64 h-64 rounded-[32px] bg-white p-4 shadow-2xl flex items-center justify-center border-4 border-[#24A1DE]/40 overflow-hidden group">
           {loading ? (
             <div className="flex flex-col items-center gap-2 text-slate-900">
-              <Loader2 className="w-8 h-8 animate-spin text-[#229ED9]" />
-              <span className="text-[11px] font-bold text-slate-600">Generating QR...</span>
+              <Loader2 className="w-9 h-9 animate-spin text-[#24A1DE]" />
+              <span className="text-[11px] font-bold text-slate-600">Generating Official QR...</span>
             </div>
           ) : status === 'CONFIRMED' ? (
             <motion.div
@@ -186,42 +186,44 @@ export default function TelegramQrModal({ isOpen, onClose, onSuccess }) {
               animate={{ scale: 1, opacity: 1 }}
               className="flex flex-col items-center gap-2 text-emerald-600"
             >
-              <CheckCircle2 className="w-14 h-14 text-emerald-500 animate-bounce" />
-              <span className="text-xs font-black text-emerald-700">LOGIN APPROVED!</span>
+              <CheckCircle2 className="w-16 h-16 text-emerald-500 animate-bounce" />
+              <span className="text-sm font-black text-emerald-700">LOGIN APPROVED!</span>
             </motion.div>
           ) : status === 'EXPIRED' ? (
             <div className="flex flex-col items-center gap-2.5 text-slate-800">
               <span className="text-xs font-bold text-rose-600">QR Code Expired</span>
               <button
                 onClick={initQr}
-                className="px-3.5 py-1.5 rounded-xl bg-[#229ED9] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#1e88c7] transition shadow"
+                className="px-4 py-2 rounded-2xl bg-[#24A1DE] text-white text-xs font-bold flex items-center gap-1.5 hover:bg-[#1e88c7] transition shadow-md"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Reload QR
+                <RefreshCw className="w-3.5 h-3.5" /> Reload QR Code
               </button>
             </div>
           ) : (
             <>
-              {/* QR Code SVG */}
+              {/* Official Telegram QR Code with Blue Circle Plane Logo */}
               <QRCodeSVG
                 value={qrValue}
-                size={180}
-                level="M"
+                size={216}
+                level="H"
                 includeMargin={false}
+                fgColor="#000000"
+                bgColor="#FFFFFF"
                 imageSettings={{
-                  src: 'https://telegram.org/img/t_logo.svg',
+                  src: 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2324A1DE"/><path d="M24 50.5l43.5-18.5c2-.9 3.8.4 3.1 3.4l-7.4 34.8c-.6 2.5-2 3.1-4.1 1.9l-11.3-8.3-5.4 5.2c-.6.6-1.1 1.1-2.3 1.1l.8-11.6 21.1-19.1c.9-.8-.2-1.3-1.4-.5L29.4 54.1l-11.2-3.5c-2.4-.8-2.5-2.4.5-3.6z" fill="%23ffffff"/></svg>',
                   x: undefined,
                   y: undefined,
-                  height: 32,
-                  width: 32,
+                  height: 46,
+                  width: 46,
                   excavate: true,
                 }}
               />
 
-              {/* Animated Scanning Laser Line */}
+              {/* Animated Telegram Blue Laser Scanning Line */}
               <motion.div
-                animate={{ y: [-75, 75, -75] }}
+                animate={{ y: [-95, 95, -95] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute inset-x-3 h-0.5 bg-gradient-to-r from-transparent via-[#229ED9] to-transparent shadow-[0_0_12px_#229ED9]"
+                className="absolute inset-x-4 h-1 bg-gradient-to-r from-transparent via-[#24A1DE] to-transparent shadow-[0_0_15px_#24A1DE]"
               />
             </>
           )}
