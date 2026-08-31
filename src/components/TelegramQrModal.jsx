@@ -32,7 +32,7 @@ export default function TelegramQrModal({ isOpen, onClose, onSuccess }) {
       if (data?.sessionId) {
         setSessionId(data.sessionId);
         setQrValue(data.deepLink || `https://dynastore.site/login?tg_session=${data.sessionId}`);
-        setDeepLink(data.deepLink || `https://t.me/DynaStoreAuthBot?start=login_${data.sessionId}`);
+        setDeepLink(data.deepLink || `https://t.me/Dynastorepc_bot?start=login_${data.sessionId}`);
       }
     } catch (err) {
       console.error('Failed to create Telegram QR session:', err);
