@@ -135,9 +135,28 @@ export default function TelegramQrModal({ isOpen, onClose, onSuccess }) {
         last_name: 'Player',
         photo_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=tg_qr_user',
       };
-      await authService.confirmTelegramQr(testUser);
+      const res = await authService.confirmTelegramQr(testUser);
+      if (res && res.token && res.user) {
+        setStatus('CONFIRMED');
+        localStorage.setItem('dynastore_token', res.token);
+        localStorage.setItem('dynastore_user', JSON.stringify(res.user));
+
+        confetti({
+          particleCount: 80,
+          spread: 60,
+          origin: { y: 0.6 },
+          colors: ['#229ED9', '#00f0ff', '#3b82f6', '#ffffff'],
+        });
+
+        toast.success(`Telegram QR Verified! Welcome, ${res.user.username || 'Gamer'}!`);
+
+        setTimeout(() => {
+          if (onSuccess) onSuccess(res);
+          onClose();
+        }, 1000);
+      }
     } catch (err) {
-      toast.error('Simulation notice: ' + (err.message || 'Error confirming QR'));
+      toast.error(err.response?.data?.message || err.message || 'Error confirming QR');
     } finally {
       setConfirming(false);
     }
