@@ -16,4 +16,4 @@ services:
       - key: VITE_SUPABASE_ANON_KEY
         value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aGJ0aXZhdGZheHhidWlsbHRqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc5NzkwNDksImV4cCI6MjEwMzU1NTA0OX0.WcnHZLuWMpZYj5PReyiMgvwSx46DRAlvl99o0SmQtAk
       - key: VITE_GOOGLE_CLIENT_ID
-        value: 16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com
+        value: 731469891455-d7438balkjdf9igbn1452171d6ufta39.apps.googleusercontent.com
