@@ -36,6 +36,40 @@ export const AuthProvider = ({ children }) => {
   // 1. Check for incoming Supabase / Google OAuth callback & existing sessions
   useEffect(() => {
     const initAuth = async () => {
+      // 1. Telegram WebApp Auto-Login
+      try {
+        if (window.Telegram?.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+          if (window.Telegram.WebApp.setHeaderColor) {
+            window.Telegram.WebApp.setHeaderColor('#0b0f19');
+          }
+          if (window.Telegram.WebApp.setBackgroundColor) {
+            window.Telegram.WebApp.setBackgroundColor('#07090e');
+          }
+
+          const tgUser = window.Telegram.WebApp.initDataUnsafe?.user;
+          if (tgUser && !token) {
+            const res = await API.post('/auth/telegram', {
+              id: tgUser.id,
+              first_name: tgUser.first_name,
+              last_name: tgUser.last_name,
+              username: tgUser.username,
+              photo_url: tgUser.photo_url,
+              hash: window.Telegram.WebApp.initData || undefined,
+              telegram_id: tgUser.id,
+            });
+            if (res.data.success) {
+              handleAuthSuccess(res.data.token, res.data.user);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      } catch (tgErr) {
+        console.warn('Telegram Auto-Login notice:', tgErr.message);
+      }
+
       // Check if user returned from Google OAuth via Supabase or redirect
       try {
         const { data: { session } } = await supabase.auth.getSession();
