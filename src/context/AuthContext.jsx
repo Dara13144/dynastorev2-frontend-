@@ -370,13 +370,33 @@ export const AuthProvider = ({ children }) => {
     throw new Error(res.data.message || 'OTP Login failed');
   };
 
-  const logout = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (e) {
-      // Non-blocking
+  // Telegram OAuth / Widget / WebApp Login
+  const loginWithTelegram = async (telegramData) => {
+    let payload = {};
+    if (typeof telegramData === 'string') {
+      const clean = telegramData.trim().replace(/^@/, '');
+      payload = {
+        username: clean,
+        telegram_id: clean,
+        first_name: clean,
+      };
+    } else if (telegramData && typeof telegramData === 'object') {
+      payload = telegramData;
+    } else {
+      throw new Error('Telegram login data is required');
     }
+
+    const res = await API.post('/auth/telegram', payload);
+    if (res.data.success) {
+      handleAuthSuccess(res.data.token, res.data.user);
+      return res.data;
+    }
+    throw new Error(res.data.message || 'Telegram login failed');
+  };
+
+  const logout = () => {
     localStorage.removeItem('dynastore_token');
+    localStorage.removeItem('dynastore_user');
     setToken(null);
     setUser(null);
   };
@@ -412,6 +432,7 @@ export const AuthProvider = ({ children }) => {
     register,
     loginWithGoogle,
     loginWithGoogleEmail,
+    loginWithTelegram,
     renderGoogleButton,
     sendOtp,
     verifyOtp,

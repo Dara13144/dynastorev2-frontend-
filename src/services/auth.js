@@ -56,6 +56,12 @@ export const authService = {
     });
     return res.data;
   },
+
+  // 7. Login with Telegram
+  async loginWithTelegram(telegramData) {
+    const res = await API.post('/auth/telegram', telegramData);
+    return res.data;
+  },
 };
 
 export default authService;

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle, Sparkles, ArrowRight, ShieldCheck, Send } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
 export default function RegisterPage() {
-  const { register, loginWithGoogle, loginWithGoogleEmail } = useAuth();
+  const { register, loginWithGoogle, loginWithGoogleEmail, loginWithTelegram } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -18,9 +18,12 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [telegramLoading, setTelegramLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [showInstantGoogle, setShowInstantGoogle] = useState(false);
   const [instantEmail, setInstantEmail] = useState('');
+  const [showTelegramInput, setShowTelegramInput] = useState(false);
+  const [telegramHandle, setTelegramHandle] = useState('');
 
   const navigateAfterAuth = (userData) => {
     if (userData?.role === 'ADMIN') {
@@ -98,6 +101,50 @@ export default function RegisterPage() {
       toast.error(err.message || 'Google login failed');
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleTelegramLogin = async () => {
+    setAuthError(null);
+    if (window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      try {
+        setTelegramLoading(true);
+        const tgUser = window.Telegram.WebApp.initDataUnsafe.user;
+        const res = await loginWithTelegram(tgUser);
+        toast.success(`Registered & signed in with Telegram as ${res.user?.username || tgUser.first_name}!`);
+        navigateAfterAuth(res.user);
+        return;
+      } catch (err) {
+        console.warn('Telegram WebApp register notice:', err);
+      } finally {
+        setTelegramLoading(false);
+      }
+    }
+    setShowTelegramInput((prev) => !prev);
+  };
+
+  const handleTelegramSubmit = async (e) => {
+    e.preventDefault();
+    if (!telegramHandle || telegramHandle.trim().length < 2) {
+      toast.error('Please enter your Telegram username or ID');
+      return;
+    }
+    setAuthError(null);
+    try {
+      setTelegramLoading(true);
+      const clean = telegramHandle.trim().replace(/^@/, '');
+      const res = await loginWithTelegram({
+        username: clean,
+        telegram_id: clean,
+        first_name: clean,
+      });
+      toast.success(`Registered via Telegram as @${res.user?.username || clean}!`);
+      navigateAfterAuth(res.user);
+    } catch (err) {
+      setAuthError(err.formattedMessage || err.message || 'Telegram registration failed');
+      toast.error(err.formattedMessage || err.message || 'Telegram registration failed');
+    } finally {
+      setTelegramLoading(false);
     }
   };
 
@@ -189,6 +236,57 @@ export default function RegisterPage() {
               {googleLoading ? 'Connecting with Google...' : 'Continue with Google'}
             </span>
           </button>
+
+          {/* Telegram Sign Up Button */}
+          <button
+            type="button"
+            disabled={telegramLoading || googleLoading || loading}
+            onClick={handleTelegramLogin}
+            className="w-full py-3 px-4 rounded-2xl bg-[#229ED9] hover:bg-[#1E88C7] text-white font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
+          >
+            {telegramLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin text-white" />
+            ) : (
+              <Send className="w-4 h-4 text-white -rotate-12" />
+            )}
+            <span>
+              {telegramLoading ? 'Connecting Telegram...' : 'Continue with Telegram'}
+            </span>
+          </button>
+
+          {/* Instant Telegram Username / ID Form */}
+          {showTelegramInput && (
+            <form onSubmit={handleTelegramSubmit} className="p-3.5 rounded-2xl bg-[#229ED9]/10 border border-[#229ED9]/40 space-y-2.5 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-[#229ED9] flex items-center gap-1.5">
+                  <Send className="w-3.5 h-3.5" /> Sign up with Telegram Username or ID
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowTelegramInput(false)}
+                  className="text-[10px] text-slate-400 hover:text-white"
+                >
+                  ✕ Close
+                </button>
+              </div>
+              <input
+                type="text"
+                required
+                placeholder="@username or User ID"
+                value={telegramHandle}
+                onChange={(e) => setTelegramHandle(e.target.value)}
+                className="w-full bg-background-card text-white text-xs rounded-xl px-3 py-2 border border-white/15 focus:outline-none focus:border-[#229ED9]"
+              />
+              <button
+                type="submit"
+                disabled={telegramLoading}
+                className="w-full py-2 rounded-xl bg-[#229ED9] hover:bg-[#1E88C7] text-white font-bold text-xs flex items-center justify-center gap-2 transition disabled:opacity-50"
+              >
+                {telegramLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowRight className="w-3.5 h-3.5" />}
+                <span>Register with Telegram</span>
+              </button>
+            </form>
+          )}
 
           {/* Instant Google Email Sign-In Form on Origin Mismatch */}
           {showInstantGoogle && (
