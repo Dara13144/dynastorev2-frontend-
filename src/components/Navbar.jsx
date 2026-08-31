@@ -15,11 +15,14 @@ import {
   PlusCircle,
   Sparkles,
   ShoppingCart,
+  Camera,
+  QrCode,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { useLanguage } from '../context/LanguageContext.jsx';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
+import DeviceScanModal from './DeviceScanModal.jsx';
 
 export default function Navbar() {
   const { user, isAuthenticated, isAdmin, logout } = useAuth();
@@ -30,6 +33,7 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showScannerModal, setShowScannerModal] = useState(false);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -201,6 +205,20 @@ export default function Navbar() {
                         {t('nav.wallet')}
                       </Link>
 
+                      {/* Scan & Link Device Button */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setUserMenuOpen(false);
+                          setShowScannerModal(true);
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2.5 text-brand-cyan hover:bg-brand-cyan/10 transition-colors text-left font-medium"
+                      >
+                        <Camera className="w-4 h-4 text-brand-cyan" />
+                        <span>Link Another Device</span>
+                      </button>
+
                       <div className="border-t border-white/10 mt-1 pt-1">
                         <button
                           onClick={logout}
@@ -213,6 +231,12 @@ export default function Navbar() {
                     </motion.div>
                   )}
                 </AnimatePresence>
+
+                {/* Device Camera Scanner Modal */}
+                <DeviceScanModal
+                  isOpen={showScannerModal}
+                  onClose={() => setShowScannerModal(false)}
+                />
               </div>
             ) : (
               <div className="flex items-center gap-2">

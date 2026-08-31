@@ -78,6 +78,22 @@ export const authService = {
     const res = await API.post('/auth/telegram/qr/confirm', payload);
     return res.data;
   },
+
+  // 9. Cross-Device QR Code Sync & Authorization
+  async createDeviceQr() {
+    const res = await API.post('/auth/device-qr/create');
+    return res.data;
+  },
+
+  async getDeviceQrStatus(sessionId) {
+    const res = await API.get(`/auth/device-qr/status/${sessionId}`);
+    return res.data;
+  },
+
+  async authorizeDeviceQr(sessionId) {
+    const res = await API.post('/auth/device-qr/authorize', { sessionId });
+    return res.data;
+  },
 };
 
 export default authService;

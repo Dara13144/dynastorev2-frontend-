@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2, AlertCircle, Sparkles, KeyRound, RefreshCw, Send, QrCode } from 'lucide-react';
+import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2, AlertCircle, Sparkles, KeyRound, RefreshCw, Send, QrCode, Smartphone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import TelegramQrModal from '../components/TelegramQrModal.jsx';
+import DeviceQrModal from '../components/DeviceQrModal.jsx';
 
 export default function LoginPage() {
   const { login, loginWithGoogle, loginWithGoogleEmail, loginWithTelegram, sendOtp, loginWithOtp } = useAuth();
@@ -25,6 +26,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [showDeviceQrModal, setShowDeviceQrModal] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [showInstantGoogle, setShowInstantGoogle] = useState(false);
   const [instantEmail, setInstantEmail] = useState('');
@@ -308,14 +310,32 @@ export default function LoginPage() {
               className="py-3 px-3 rounded-2xl bg-[#0b0f19] hover:bg-white/10 border border-[#229ED9]/40 text-[#229ED9] hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
             >
               <QrCode className="w-4 h-4 text-[#229ED9] group-hover:text-white" />
-              <span className="truncate">Scan QR Code</span>
+              <span className="truncate">Telegram QR</span>
             </button>
           </div>
+
+          {/* Cross-Device Phone QR Login Button */}
+          <button
+            type="button"
+            disabled={telegramLoading || googleLoading || loading || otpLoading}
+            onClick={() => setShowDeviceQrModal(true)}
+            className="w-full py-2.5 px-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-brand-cyan/30 text-brand-cyan hover:text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm group"
+          >
+            <Smartphone className="w-4 h-4 text-brand-cyan group-hover:scale-110 transition-transform" />
+            <span>Login via Phone QR Scan</span>
+          </button>
 
           {/* Telegram QR Modal */}
           <TelegramQrModal
             isOpen={showQrModal}
             onClose={() => setShowQrModal(false)}
+            onSuccess={(res) => navigateAfterAuth(res?.user)}
+          />
+
+          {/* Cross-Device QR Modal */}
+          <DeviceQrModal
+            isOpen={showDeviceQrModal}
+            onClose={() => setShowDeviceQrModal(false)}
             onSuccess={(res) => navigateAfterAuth(res?.user)}
           />
 
