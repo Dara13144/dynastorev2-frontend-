@@ -64,8 +64,8 @@ export const authService = {
   },
 
   // 8. Telegram QR Code Login
-  async createTelegramQr() {
-    const res = await API.post('/auth/telegram/qr/create');
+  async createTelegramQr(payload = {}) {
+    const res = await API.post('/auth/telegram/qr/create', payload);
     return res.data;
   },
 
