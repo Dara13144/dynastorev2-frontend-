@@ -218,7 +218,7 @@ export const AuthProvider = ({ children }) => {
     });
   };
 
-  // Google Sign-In with Official Google Identity Services & Verified Backend Auth
+  // Google Sign-In with Official Supabase OAuth & Google Identity Services
   const loginWithGoogle = async (googlePayload = null) => {
     // 1. Direct Payload or Email login
     if (googlePayload?.email) {
@@ -239,13 +239,38 @@ export const AuthProvider = ({ children }) => {
       throw new Error(res.data.message || 'Google login failed');
     }
 
+    // 2. Primary: Official Supabase Hosted Google OAuth (Real Gmail Login)
+    try {
+      const redirectTarget = window.location.origin;
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectTarget,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
+          },
+        },
+      });
+
+      if (data?.url) {
+        window.location.href = data.url;
+        return { redirect: true, message: 'Redirecting to Real Google Sign-In...' };
+      }
+      if (error) {
+        console.warn('Supabase OAuth notice:', error.message);
+      }
+    } catch (supaErr) {
+      console.warn('Supabase OAuth notice:', supaErr.message);
+    }
+
+    // 3. Fallback: Google Identity Services (GIS) Token Client Popup
     await ensureGoogleScriptLoaded();
 
     const googleClientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
       '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
 
-    // 2. Google Identity Services (GIS) Token Client Popup
     if (window.google?.accounts?.oauth2) {
       try {
         const tokenResult = await new Promise((resolve, reject) => {
@@ -266,7 +291,6 @@ export const AuthProvider = ({ children }) => {
                   }
                   reject(new Error(res.data.message || 'Verification failed'));
                 } catch (fetchErr) {
-                  console.error('Error verifying Google session on server:', fetchErr);
                   reject(fetchErr);
                 }
               } else if (tokenResponse?.error) {
@@ -279,17 +303,7 @@ export const AuthProvider = ({ children }) => {
               }
             },
             error_callback: (err) => {
-              const errMsg = err?.message || err?.error || '';
-              if (
-                errMsg.toLowerCase().includes('closed') ||
-                errMsg === 'popup_closed_by_user' ||
-                errMsg === 'popup_blocked_by_browser' ||
-                err?.type === 'popup_closed'
-              ) {
-                resolve({ cancelled: true, message: 'Google Sign-In popup was closed.' });
-              } else {
-                reject(new Error(errMsg || 'Google Sign-In popup error'));
-              }
+              resolve({ cancelled: true, message: 'Google popup closed.' });
             }
           });
 
@@ -304,62 +318,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    // 3. Fallback: Google Identity Services (GSI) One-Tap / ID Credential
-    if (window.google?.accounts?.id) {
-      try {
-        const gsiResult = await new Promise((resolve, reject) => {
-          window.google.accounts.id.initialize({
-            client_id: googleClientId,
-            callback: async (response) => {
-              try {
-                if (response.credential) {
-                  const res = await API.post('/auth/google', {
-                    credential: response.credential,
-                  });
-                  if (res.data.success) {
-                    handleAuthSuccess(res.data.token, res.data.user);
-                    resolve(res.data);
-                    return;
-                  }
-                }
-                reject(new Error('Failed to verify Google credential'));
-              } catch (err) {
-                reject(err);
-              }
-            },
-          });
-          window.google.accounts.id.prompt((notification) => {
-            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-              resolve(null);
-            }
-          });
-        });
-        if (gsiResult) return gsiResult;
-      } catch (e) {
-        console.warn('GSI ID init notice:', e.message);
-      }
-    }
-
-    // 4. Fallback: Supabase Hosted Google OAuth
-    try {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        },
-      });
-      if (data?.url) {
-        window.location.href = data.url;
-        return { redirect: true, message: 'Redirecting to Google Sign-In...' };
-      }
-      if (error) {
-        console.warn('Supabase OAuth notice:', error.message);
-      }
-    } catch (supaErr) {
-      console.warn('Supabase OAuth notice:', supaErr.message);
-    }
-
-    throw new Error('Google Sign-In popup could not open. Please use your Google Email below.');
+    throw new Error('Google Sign-In could not open. Please use your Google Email.');
   };
 
   // Direct Instant Google Email Login (Bypasses Google Console Origin Mismatch Restrictions)
