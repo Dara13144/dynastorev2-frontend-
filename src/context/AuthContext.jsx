@@ -22,13 +22,23 @@ const parseJwt = (token) => {
 };
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('dynastore_token') || null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem('dynastore_user');
+      return cached ? JSON.parse(cached) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+  const [token, setToken] = useState(() => localStorage.getItem('dynastore_token') || null);
+  const [loading, setLoading] = useState(() => !Boolean(localStorage.getItem('dynastore_token')));
 
-  // Helper to store user and token
+  // Helper to store user and token permanently
   const handleAuthSuccess = (newToken, newUser) => {
-    localStorage.setItem('dynastore_token', newToken);
+    try {
+      localStorage.setItem('dynastore_token', newToken);
+      localStorage.setItem('dynastore_user', JSON.stringify(newUser));
+    } catch (e) {}
     setToken(newToken);
     setUser(newUser);
   };
@@ -36,6 +46,31 @@ export const AuthProvider = ({ children }) => {
   // 1. Check for incoming Supabase / Google OAuth callback & existing sessions
   useEffect(() => {
     const initAuth = async () => {
+      // Check URL query parameters for auto-login tokens
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlToken = urlParams.get('token') || urlParams.get('tg_token') || urlParams.get('auth_token');
+        if (urlToken) {
+          localStorage.setItem('dynastore_token', urlToken);
+          setToken(urlToken);
+          const cleanUrl = window.location.pathname + (window.location.hash || '');
+          window.history.replaceState(null, '', cleanUrl);
+
+          try {
+            const res = await API.get('/auth/me', {
+              headers: { Authorization: `Bearer ${urlToken}` },
+            });
+            if (res.data.success) {
+              handleAuthSuccess(urlToken, res.data.user);
+              setLoading(false);
+              return;
+            }
+          } catch (e) {}
+        }
+      } catch (err) {
+        console.warn('URL token check notice:', err);
+      }
+
       // 1. Telegram WebApp Auto-Login
       try {
         if (window.Telegram?.WebApp) {
@@ -96,18 +131,22 @@ export const AuthProvider = ({ children }) => {
         console.warn('Supabase OAuth session sync notice:', err.message);
       }
 
-      // Existing JWT Token verification
-      if (token) {
+      // Existing JWT Token verification and silent profile refresh
+      const activeToken = token || localStorage.getItem('dynastore_token');
+      if (activeToken) {
         try {
           const res = await API.get('/auth/me');
           if (res.data.success) {
             setUser(res.data.user);
-          } else {
+            localStorage.setItem('dynastore_user', JSON.stringify(res.data.user));
+          } else if (res.status === 401 || res.status === 403) {
             logout();
           }
         } catch (err) {
-          console.warn('Session expired or invalid:', err.message);
-          logout();
+          // If token rejected by server with 401/403, clear session. Otherwise retain cached user.
+          if (err.response?.status === 401 || err.response?.status === 403) {
+            logout();
+          }
         }
       }
       setLoading(false);
