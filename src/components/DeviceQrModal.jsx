@@ -124,8 +124,7 @@ export default function DeviceQrModal({ isOpen, onClose, onSuccess }) {
         await authService.authorizeDeviceQr(sessionId);
       } else {
         // Call direct confirmation
-        await authService.confirmTelegramQr({
-          sessionId,
+        await authService.confirmDeviceQr(sessionId, {
           username: 'cross_device_user',
           first_name: 'Dyna',
           last_name: 'Player',

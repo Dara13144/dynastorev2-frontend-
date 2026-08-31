@@ -94,6 +94,11 @@ export const authService = {
     const res = await API.post('/auth/device-qr/authorize', { sessionId });
     return res.data;
   },
+
+  async confirmDeviceQr(sessionId, payload = {}) {
+    const res = await API.post('/auth/device-qr/confirm', { sessionId, ...payload });
+    return res.data;
+  },
 };
 
 export default authService;
