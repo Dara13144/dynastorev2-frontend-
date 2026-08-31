@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle } from 'lucide-react';
+import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+
 export default function RegisterPage() {
   const { register, loginWithGoogle, loginWithGoogleEmail } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTarget = searchParams.get('redirect') || null;
 
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -19,6 +22,16 @@ export default function RegisterPage() {
   const [showInstantGoogle, setShowInstantGoogle] = useState(false);
   const [instantEmail, setInstantEmail] = useState('');
 
+  const navigateAfterAuth = (userData) => {
+    if (userData?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (redirectTarget) {
+      navigate(redirectTarget);
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setAuthError(null);
     if (email && email.includes('@')) {
@@ -26,11 +39,7 @@ export default function RegisterPage() {
         setGoogleLoading(true);
         const res = await loginWithGoogleEmail(email, username);
         toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
-        if (res.user?.role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        navigateAfterAuth(res.user);
         return;
       } catch (err) {
         console.warn('Instant register notice:', err);
@@ -45,18 +54,27 @@ export default function RegisterPage() {
       if (res?.redirect) {
         return; // Redirecting to OAuth provider
       }
+      if (res?.cancelled) {
+        setShowInstantGoogle(true);
+        setInstantEmail(email || '');
+        return;
+      }
       if (res?.success) {
         toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
-        if (res.user?.role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        navigateAfterAuth(res.user);
       }
     } catch (err) {
       console.warn('Google Sign-In notice:', err.message);
       const errMsg = (err.message || '').toLowerCase();
-      if (errMsg.includes('origin_mismatch') || errMsg.includes('policy') || errMsg.includes('400') || errMsg.includes('failed') || errMsg.includes('could not open') || errMsg.includes('not loaded')) {
+      if (
+        errMsg.includes('origin_mismatch') ||
+        errMsg.includes('policy') ||
+        errMsg.includes('400') ||
+        errMsg.includes('failed') ||
+        errMsg.includes('could not open') ||
+        errMsg.includes('not loaded') ||
+        errMsg.includes('blocked')
+      ) {
         setShowInstantGoogle(true);
         setInstantEmail(email || '');
       } else if (!errMsg.includes('closed') && !errMsg.includes('cancelled')) {
@@ -75,11 +93,7 @@ export default function RegisterPage() {
       setGoogleLoading(true);
       const res = await loginWithGoogleEmail(instantEmail);
       toast.success(`Registered & signed in with Google as ${res.user?.username || instantEmail}!`);
-      if (res.user?.role === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      navigateAfterAuth(res.user);
     } catch (err) {
       toast.error(err.message || 'Google login failed');
     } finally {
@@ -102,9 +116,9 @@ export default function RegisterPage() {
 
     try {
       setLoading(true);
-      await register(email, username, password);
+      const res = await register(email, username, password);
       toast.success('Account created successfully! Welcome to DynaStore.');
-      navigate('/');
+      navigateAfterAuth(res.user);
     } catch (err) {
       setAuthError(err.formattedMessage || 'Registration failed');
       toast.error(err.formattedMessage || 'Registration failed');
@@ -141,8 +155,8 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Google Sign In Button */}
-        <div className="space-y-2">
+        {/* Google Sign In Button & Options */}
+        <div className="space-y-2.5">
           <button
             type="button"
             disabled={googleLoading || loading}
@@ -215,7 +229,7 @@ export default function RegisterPage() {
         <div className="relative flex items-center justify-center">
           <div className="border-t border-white/10 w-full" />
           <span className="bg-background-card px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider absolute">
-            Or with email
+            Or with password
           </span>
         </div>
 

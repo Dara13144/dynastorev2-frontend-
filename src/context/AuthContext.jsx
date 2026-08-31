@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import API from '../utils/api.js';
 import { supabase } from '../utils/supabase.js';
@@ -26,10 +26,17 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(localStorage.getItem('dynastore_token') || null);
   const [loading, setLoading] = useState(true);
 
-  // 1. Check for incoming Supabase Google OAuth callback & existing sessions
+  // Helper to store user and token
+  const handleAuthSuccess = (newToken, newUser) => {
+    localStorage.setItem('dynastore_token', newToken);
+    setToken(newToken);
+    setUser(newUser);
+  };
+
+  // 1. Check for incoming Supabase / Google OAuth callback & existing sessions
   useEffect(() => {
     const initAuth = async () => {
-      // Check if user returned from Google OAuth via Supabase
+      // Check if user returned from Google OAuth via Supabase or redirect
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user && !token) {
@@ -43,9 +50,7 @@ export const AuthProvider = ({ children }) => {
 
           const res = await API.post('/auth/google', payload);
           if (res.data.success) {
-            localStorage.setItem('dynastore_token', res.data.token);
-            setToken(res.data.token);
-            setUser(res.data.user);
+            handleAuthSuccess(res.data.token, res.data.user);
             if (window.location.hash && window.location.hash.includes('access_token')) {
               window.history.replaceState(null, '', window.location.pathname + window.location.search);
             }
@@ -88,9 +93,7 @@ export const AuthProvider = ({ children }) => {
             sub: googleUser.id,
           });
           if (res.data.success) {
-            localStorage.setItem('dynastore_token', res.data.token);
-            setToken(res.data.token);
-            setUser(res.data.user);
+            handleAuthSuccess(res.data.token, res.data.user);
           }
         } catch (e) {
           console.error('Failed to sync Supabase Google user:', e);
@@ -106,9 +109,7 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await API.post('/auth/login', { email, password });
     if (res.data.success) {
-      localStorage.setItem('dynastore_token', res.data.token);
-      setToken(res.data.token);
-      setUser(res.data.user);
+      handleAuthSuccess(res.data.token, res.data.user);
       return res.data;
     }
     throw new Error(res.data.message || 'Login failed');
@@ -117,9 +118,7 @@ export const AuthProvider = ({ children }) => {
   const register = async (email, username, password) => {
     const res = await API.post('/auth/register', { email, username, password });
     if (res.data.success) {
-      localStorage.setItem('dynastore_token', res.data.token);
-      setToken(res.data.token);
-      setUser(res.data.user);
+      handleAuthSuccess(res.data.token, res.data.user);
       return res.data;
     }
     throw new Error(res.data.message || 'Registration failed');
@@ -152,9 +151,7 @@ export const AuthProvider = ({ children }) => {
     if (googlePayload?.email) {
       const res = await API.post('/auth/google', googlePayload);
       if (res.data.success) {
-        localStorage.setItem('dynastore_token', res.data.token);
-        setToken(res.data.token);
-        setUser(res.data.user);
+        handleAuthSuccess(res.data.token, res.data.user);
         return res.data;
       }
       throw new Error(res.data.message || 'Google login failed');
@@ -163,9 +160,7 @@ export const AuthProvider = ({ children }) => {
     if (googlePayload?.credential || googlePayload?.access_token) {
       const res = await API.post('/auth/google', googlePayload);
       if (res.data.success) {
-        localStorage.setItem('dynastore_token', res.data.token);
-        setToken(res.data.token);
-        setUser(res.data.user);
+        handleAuthSuccess(res.data.token, res.data.user);
         return res.data;
       }
       throw new Error(res.data.message || 'Google login failed');
@@ -180,7 +175,7 @@ export const AuthProvider = ({ children }) => {
     // 2. Google Identity Services (GIS) Token Client Popup
     if (window.google?.accounts?.oauth2) {
       try {
-        return await new Promise((resolve, reject) => {
+        const tokenResult = await new Promise((resolve, reject) => {
           const tokenClient = window.google.accounts.oauth2.initTokenClient({
             client_id: googleClientId,
             scope: 'email profile openid',
@@ -192,9 +187,7 @@ export const AuthProvider = ({ children }) => {
                     code: tokenResponse.code,
                   });
                   if (res.data.success) {
-                    localStorage.setItem('dynastore_token', res.data.token);
-                    setToken(res.data.token);
-                    setUser(res.data.user);
+                    handleAuthSuccess(res.data.token, res.data.user);
                     resolve(res.data);
                     return;
                   }
@@ -229,6 +222,10 @@ export const AuthProvider = ({ children }) => {
 
           tokenClient.requestAccessToken({ prompt: 'select_account' });
         });
+
+        if (tokenResult?.success || tokenResult?.cancelled) {
+          return tokenResult;
+        }
       } catch (e) {
         console.warn('Google Token Client init notice:', e.message);
       }
@@ -247,9 +244,7 @@ export const AuthProvider = ({ children }) => {
                     credential: response.credential,
                   });
                   if (res.data.success) {
-                    localStorage.setItem('dynastore_token', res.data.token);
-                    setToken(res.data.token);
-                    setUser(res.data.user);
+                    handleAuthSuccess(res.data.token, res.data.user);
                     resolve(res.data);
                     return;
                   }
@@ -307,12 +302,72 @@ export const AuthProvider = ({ children }) => {
     };
     const res = await API.post('/auth/google', payload);
     if (res.data.success) {
-      localStorage.setItem('dynastore_token', res.data.token);
-      setToken(res.data.token);
-      setUser(res.data.user);
+      handleAuthSuccess(res.data.token, res.data.user);
       return res.data;
     }
     throw new Error(res.data.message || 'Google login failed');
+  };
+
+  const renderGoogleButton = useCallback(async (containerElement, options = {}) => {
+    if (!containerElement) return;
+    await ensureGoogleScriptLoaded();
+    const googleClientId =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      '16446964112-ci1cf4v6vc551ppvm003107sgkqg96as.apps.googleusercontent.com';
+
+    if (window.google?.accounts?.id) {
+      try {
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          callback: async (response) => {
+            if (response.credential) {
+              const res = await API.post('/auth/google', { credential: response.credential });
+              if (res.data.success) {
+                handleAuthSuccess(res.data.token, res.data.user);
+                if (options.onSuccess) options.onSuccess(res.data);
+              }
+            }
+          },
+        });
+        window.google.accounts.id.renderButton(containerElement, {
+          theme: 'filled_blue',
+          size: 'large',
+          type: 'standard',
+          shape: 'pill',
+          text: 'signin_with',
+          logo_alignment: 'left',
+          width: '100%',
+          ...options,
+        });
+      } catch (err) {
+        console.warn('Failed to render official Google button:', err.message);
+      }
+    }
+  }, []);
+
+  // Send real 6-digit OTP code to Gmail
+  const sendOtp = async (email, type = 'LOGIN_OTP') => {
+    if (!email) throw new Error('Email is required');
+    const res = await API.post('/auth/send-otp', { email: email.trim().toLowerCase(), type });
+    return res.data;
+  };
+
+  // Verify 6-digit OTP code
+  const verifyOtp = async (email, code) => {
+    if (!email || !code) throw new Error('Email and code are required');
+    const res = await API.post('/auth/verify-otp', { email: email.trim().toLowerCase(), code: code.toString().trim() });
+    return res.data;
+  };
+
+  // Passwordless Login with 6-digit Gmail OTP
+  const loginWithOtp = async (email, code) => {
+    if (!email || !code) throw new Error('Email and code are required');
+    const res = await API.post('/auth/otp-login', { email: email.trim().toLowerCase(), code: code.toString().trim() });
+    if (res.data.success) {
+      handleAuthSuccess(res.data.token, res.data.user);
+      return res.data;
+    }
+    throw new Error(res.data.message || 'OTP Login failed');
   };
 
   const logout = async () => {
@@ -357,6 +412,10 @@ export const AuthProvider = ({ children }) => {
     register,
     loginWithGoogle,
     loginWithGoogleEmail,
+    renderGoogleButton,
+    sendOtp,
+    verifyOtp,
+    loginWithOtp,
     logout,
     refreshUser,
     updateProfile,

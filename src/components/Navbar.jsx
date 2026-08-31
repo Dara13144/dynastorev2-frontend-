@@ -128,16 +128,14 @@ export default function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 p-1.5 rounded-xl bg-brand-surface/80 border border-white/10 hover:border-brand-cyan/50 transition-all focus:outline-none"
+                  className="flex items-center p-1 rounded-xl bg-brand-surface/80 border border-white/10 hover:border-brand-cyan/50 transition-all focus:outline-none"
+                  title={user?.username || 'User Profile'}
                 >
                   <img
-                    src={user?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.username}`}
+                    src={user?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${user?.username || 'user'}`}
                     alt="Avatar"
                     className="w-8 h-8 rounded-lg bg-slate-800 object-cover"
                   />
-                  <span className="hidden sm:inline text-xs font-semibold text-slate-200 max-w-[90px] truncate">
-                    {user?.username}
-                  </span>
                 </button>
 
                 {/* Dropdown Menu */}

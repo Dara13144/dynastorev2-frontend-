@@ -1,35 +1,57 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2, AlertCircle } from 'lucide-react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Gamepad2, Mail, Lock, LogIn, ArrowRight, ShieldCheck, Loader2, AlertCircle, Sparkles, KeyRound, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+
 export default function LoginPage() {
-  const { login, loginWithGoogle, loginWithGoogleEmail } = useAuth();
+  const { login, loginWithGoogle, loginWithGoogleEmail, sendOtp, loginWithOtp } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectTarget = searchParams.get('redirect') || null;
 
+  const [authMode, setAuthMode] = useState('PASSWORD'); // 'PASSWORD' | 'OTP'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [showInstantGoogle, setShowInstantGoogle] = useState(false);
   const [instantEmail, setInstantEmail] = useState('');
 
+  // OTP Cooldown timer
+  React.useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setInterval(() => setCooldown((prev) => prev - 1), 1000);
+      return () => clearInterval(timer);
+    }
+  }, [cooldown]);
+
+  const navigateAfterAuth = (userData) => {
+    if (userData?.role === 'ADMIN') {
+      navigate('/admin');
+    } else if (redirectTarget) {
+      navigate(redirectTarget);
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setAuthError(null);
-    // 1. If email is already typed in the input box, log in directly via Google
     if (email && email.includes('@')) {
       try {
         setGoogleLoading(true);
         const res = await loginWithGoogleEmail(email);
         toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
-        if (res.user?.role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        navigateAfterAuth(res.user);
         return;
       } catch (err) {
         console.warn('Instant login notice:', err);
@@ -38,25 +60,33 @@ export default function LoginPage() {
       }
     }
 
-    // 2. Try official Google OAuth redirect
     try {
       setGoogleLoading(true);
       const res = await loginWithGoogle();
       if (res?.redirect) {
         return; // Redirecting to OAuth provider
       }
+      if (res?.cancelled) {
+        setShowInstantGoogle(true);
+        setInstantEmail(email || '');
+        return;
+      }
       if (res?.success) {
         toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
-        if (res.user?.role === 'ADMIN') {
-          navigate('/admin');
-        } else {
-          navigate('/');
-        }
+        navigateAfterAuth(res.user);
       }
     } catch (err) {
       console.warn('Google Sign-In notice:', err.message);
       const errMsg = (err.message || '').toLowerCase();
-      if (errMsg.includes('origin_mismatch') || errMsg.includes('policy') || errMsg.includes('400') || errMsg.includes('failed') || errMsg.includes('could not open') || errMsg.includes('not loaded')) {
+      if (
+        errMsg.includes('origin_mismatch') ||
+        errMsg.includes('policy') ||
+        errMsg.includes('400') ||
+        errMsg.includes('failed') ||
+        errMsg.includes('could not open') ||
+        errMsg.includes('not loaded') ||
+        errMsg.includes('blocked')
+      ) {
         setShowInstantGoogle(true);
         setInstantEmail(email || '');
       } else if (!errMsg.includes('closed') && !errMsg.includes('cancelled')) {
@@ -75,11 +105,7 @@ export default function LoginPage() {
       setGoogleLoading(true);
       const res = await loginWithGoogleEmail(instantEmail);
       toast.success(`Signed in with Google as ${res.user?.username || instantEmail}!`);
-      if (res.user?.role === 'ADMIN') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      navigateAfterAuth(res.user);
     } catch (err) {
       toast.error(err.message || 'Google login failed');
     } finally {
@@ -87,14 +113,55 @@ export default function LoginPage() {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSendOtp = async (e) => {
+    e?.preventDefault();
+    if (!email || !email.includes('@')) {
+      toast.error('Please enter a valid Gmail / email address');
+      return;
+    }
+    setAuthError(null);
+    try {
+      setOtpLoading(true);
+      await sendOtp(email, 'LOGIN_OTP');
+      setOtpSent(true);
+      setCooldown(60);
+      toast.success('6-Digit verification code dispatched to your Gmail!');
+    } catch (err) {
+      setAuthError(err.formattedMessage || err.message || 'Failed to dispatch Gmail code');
+      toast.error(err.formattedMessage || err.message || 'Failed to dispatch Gmail code');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleOtpLogin = async (e) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.length < 4) {
+      toast.error('Please enter the 6-digit code sent to your Gmail');
+      return;
+    }
+    setAuthError(null);
+    try {
+      setLoading(true);
+      const res = await loginWithOtp(email, otpCode);
+      toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
+      navigateAfterAuth(res.user);
+    } catch (err) {
+      setAuthError(err.formattedMessage || err.message || 'Invalid or expired Gmail code');
+      toast.error(err.formattedMessage || err.message || 'Invalid or expired Gmail code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePasswordSubmit = async (e) => {
     e.preventDefault();
     setAuthError(null);
     try {
       setLoading(true);
-      await login(email, password);
+      const res = await login(email, password);
       toast.success('Welcome back to DynaStore!');
-      navigate('/');
+      navigateAfterAuth(res.user);
     } catch (err) {
       setAuthError(err.formattedMessage || err.message || 'Login failed');
       toast.error(err.formattedMessage || err.message || 'Login failed');
@@ -131,11 +198,11 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Real Google Sign In Button */}
-        <div className="space-y-2">
+        {/* Google Sign In Button & Options */}
+        <div className="space-y-2.5">
           <button
             type="button"
-            disabled={googleLoading || loading}
+            disabled={googleLoading || loading || otpLoading}
             onClick={handleGoogleLogin}
             className="w-full py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
           >
@@ -166,7 +233,7 @@ export default function LoginPage() {
             </span>
           </button>
 
-          {/* Instant Google Email Sign-In Form on Origin Mismatch */}
+          {/* Instant Google Email Form */}
           {showInstantGoogle && (
             <form onSubmit={handleInstantGoogleSubmit} className="p-3.5 rounded-2xl bg-white/5 border border-brand-cyan/30 space-y-2.5 animate-fadeIn">
               <div className="flex items-center justify-between">
@@ -204,57 +271,152 @@ export default function LoginPage() {
         {/* Divider */}
         <div className="relative flex items-center justify-center">
           <div className="border-t border-white/10 w-full" />
-          <span className="bg-background-card px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider absolute">
-            Or with email
-          </span>
+          <div className="bg-background-card px-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setAuthMode('PASSWORD')}
+              className={`text-[11px] font-bold uppercase tracking-wider transition-colors ${
+                authMode === 'PASSWORD' ? 'text-brand-cyan border-b-2 border-brand-cyan pb-0.5' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              Password
+            </button>
+            <span className="text-slate-600">|</span>
+            <button
+              type="button"
+              onClick={() => setAuthMode('OTP')}
+              className={`text-[11px] font-bold uppercase tracking-wider transition-colors flex items-center gap-1 ${
+                authMode === 'OTP' ? 'text-brand-cyan border-b-2 border-brand-cyan pb-0.5' : 'text-slate-500 hover:text-slate-300'
+              }`}
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>Gmail OTP</span>
+            </button>
+          </div>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Address</label>
-            <div className="relative">
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                required
-                className="w-full bg-background-card text-white text-sm rounded-xl pl-10 pr-4 py-3 border border-white/10 focus:outline-none focus:border-brand-cyan"
-              />
-              <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+        {/* AUTH MODE 1: PASSWORD LOGIN */}
+        {authMode === 'PASSWORD' && (
+          <form onSubmit={handlePasswordSubmit} className="space-y-4 animate-fadeIn">
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Email Address</label>
+              <div className="relative">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@example.com"
+                  required
+                  className="w-full bg-background-card text-white text-sm rounded-xl pl-10 pr-4 py-3 border border-white/10 focus:outline-none focus:border-brand-cyan"
+                />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-300">Password</label>
-              <Link to="/forgot-password" className="text-xs text-brand-cyan hover:underline">
-                Forgot password?
-              </Link>
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-slate-300">Password</label>
+                <Link to="/forgot-password" className="text-xs text-brand-cyan hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="w-full bg-background-card text-white text-sm rounded-xl pl-10 pr-4 py-3 border border-white/10 focus:outline-none focus:border-brand-cyan"
+                />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+              </div>
             </div>
-            <div className="relative">
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full bg-background-card text-white text-sm rounded-xl pl-10 pr-4 py-3 border border-white/10 focus:outline-none focus:border-brand-cyan"
-              />
-              <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-            </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-3.5 rounded-2xl gradient-btn text-sm font-bold flex items-center justify-center gap-2 shadow-neon-cyan disabled:opacity-50"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
-            <span>Sign In to DynaStore</span>
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-3.5 rounded-2xl gradient-btn text-sm font-bold flex items-center justify-center gap-2 shadow-neon-cyan disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
+              <span>Sign In with Password</span>
+            </button>
+          </form>
+        )}
+
+        {/* AUTH MODE 2: GMAIL OTP PASSWORDLESS LOGIN */}
+        {authMode === 'OTP' && (
+          <div className="space-y-4 animate-fadeIn">
+            <div>
+              <label className="text-xs font-semibold text-slate-300 block mb-1.5">Gmail Address</label>
+              <div className="relative flex items-center">
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="yourname@gmail.com"
+                  required
+                  disabled={otpSent && cooldown > 0}
+                  className="w-full bg-background-card text-white text-sm rounded-xl pl-10 pr-28 py-3 border border-white/10 focus:outline-none focus:border-brand-cyan"
+                />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5" />
+                <button
+                  type="button"
+                  disabled={otpLoading || cooldown > 0 || !email.includes('@')}
+                  onClick={handleSendOtp}
+                  className="absolute right-2 px-3 py-1.5 rounded-lg bg-brand-cyan/20 hover:bg-brand-cyan/30 text-brand-cyan border border-brand-cyan/30 text-xs font-bold transition disabled:opacity-40"
+                >
+                  {otpLoading ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : cooldown > 0 ? (
+                    `${cooldown}s`
+                  ) : otpSent ? (
+                    'Resend'
+                  ) : (
+                    'Get Code'
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {otpSent && (
+              <form onSubmit={handleOtpLogin} className="space-y-4 animate-fadeIn">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-semibold text-slate-300">6-Digit Gmail Verification Code</label>
+                    <span className="text-[11px] text-brand-cyan">Sent to {email}</span>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="123456"
+                      required
+                      className="w-full bg-background-card text-center tracking-[8px] font-mono font-bold text-lg text-brand-cyan rounded-xl py-3 border border-white/15 focus:outline-none focus:border-brand-cyan"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || otpCode.length < 4}
+                  className="w-full py-3.5 rounded-2xl gradient-btn text-sm font-bold flex items-center justify-center gap-2 shadow-neon-cyan disabled:opacity-50"
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  <span>Verify Code & Sign In</span>
+                </button>
+              </form>
+            )}
+
+            {!otpSent && (
+              <p className="text-[11px] text-slate-400 text-center">
+                Click <strong>Get Code</strong> above to receive a 6-digit one-time code in your Gmail inbox. No password needed!
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Footer Link */}
         <div className="text-center pt-2 border-t border-white/10 text-xs text-slate-400">
