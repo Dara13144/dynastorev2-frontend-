@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle, Sparkles, ArrowRight, ShieldCheck, Send } from 'lucide-react';
+import { Gamepad2, Mail, Lock, User, UserPlus, Loader2, AlertCircle, Sparkles, ArrowRight, ShieldCheck, Send, QrCode } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
+import TelegramQrModal from '../components/TelegramQrModal.jsx';
 
 export default function RegisterPage() {
   const { register, loginWithGoogle, loginWithGoogleEmail, loginWithTelegram } = useAuth();
@@ -19,6 +20,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [telegramLoading, setTelegramLoading] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [showInstantGoogle, setShowInstantGoogle] = useState(false);
   const [instantEmail, setInstantEmail] = useState('');
@@ -237,22 +239,39 @@ export default function RegisterPage() {
             </span>
           </button>
 
-          {/* Telegram Sign Up Button */}
-          <button
-            type="button"
-            disabled={telegramLoading || googleLoading || loading}
-            onClick={handleTelegramLogin}
-            className="w-full py-3 px-4 rounded-2xl bg-[#229ED9] hover:bg-[#1E88C7] text-white font-bold text-xs flex items-center justify-center gap-3 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
-          >
-            {telegramLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin text-white" />
-            ) : (
-              <Send className="w-4 h-4 text-white -rotate-12" />
-            )}
-            <span>
-              {telegramLoading ? 'Connecting Telegram...' : 'Continue with Telegram'}
-            </span>
-          </button>
+          {/* Telegram Sign Up Buttons: 1-Click + QR Scanner */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              disabled={telegramLoading || googleLoading || loading}
+              onClick={handleTelegramLogin}
+              className="py-3 px-3 rounded-2xl bg-[#229ED9] hover:bg-[#1E88C7] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
+            >
+              {telegramLoading ? (
+                <Loader2 className="w-4 h-4 animate-spin text-white" />
+              ) : (
+                <Send className="w-4 h-4 text-white -rotate-12" />
+              )}
+              <span className="truncate">Telegram</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={telegramLoading || googleLoading || loading}
+              onClick={() => setShowQrModal(true)}
+              className="py-3 px-3 rounded-2xl bg-[#0b0f19] hover:bg-white/10 border border-[#229ED9]/40 text-[#229ED9] hover:text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 group"
+            >
+              <QrCode className="w-4 h-4 text-[#229ED9] group-hover:text-white" />
+              <span className="truncate">Scan QR Code</span>
+            </button>
+          </div>
+
+          {/* Telegram QR Modal */}
+          <TelegramQrModal
+            isOpen={showQrModal}
+            onClose={() => setShowQrModal(false)}
+            onSuccess={(res) => navigateAfterAuth(res?.user)}
+          />
 
           {/* Instant Telegram Username / ID Form */}
           {showTelegramInput && (
