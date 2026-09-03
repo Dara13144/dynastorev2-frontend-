@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }) => {
   // 1. Check for incoming Supabase / Google OAuth callback & existing sessions
   useEffect(() => {
     const initAuth = async () => {
-      // Check URL query parameters for auto-login tokens
+      // Check URL query parameters for auto-login tokens & Supabase PKCE OAuth code
       try {
         const urlParams = new URLSearchParams(window.location.search);
         const urlToken = urlParams.get('token') || urlParams.get('tg_token') || urlParams.get('auth_token');
@@ -66,6 +66,34 @@ export const AuthProvider = ({ children }) => {
               return;
             }
           } catch (e) {}
+        }
+
+        // Handle Supabase PKCE OAuth redirect with '?code=...'
+        const authCode = urlParams.get('code');
+        if (authCode) {
+          try {
+            const { data: codeData, error: codeErr } = await supabase.auth.exchangeCodeForSession(authCode);
+            const authUser = codeData?.session?.user || codeData?.user;
+            if (authUser?.email) {
+              const payload = {
+                email: authUser.email,
+                name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || authUser.email.split('@')[0],
+                picture: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture || `https://api.dicebear.com/7.x/bottts/svg?seed=${authUser.id}`,
+                sub: authUser.id,
+                access_token: codeData?.session?.access_token,
+              };
+
+              const res = await API.post('/auth/google', payload);
+              if (res.data.success) {
+                handleAuthSuccess(res.data.token, res.data.user);
+                window.history.replaceState(null, '', window.location.pathname);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (codeExErr) {
+            console.warn('Supabase PKCE code exchange notice:', codeExErr.message);
+          }
         }
       } catch (err) {
         console.warn('URL token check notice:', err);
@@ -209,6 +237,7 @@ export const AuthProvider = ({ children }) => {
             name: googleUser.user_metadata?.full_name || googleUser.email.split('@')[0],
             picture: googleUser.user_metadata?.avatar_url || `https://api.dicebear.com/7.x/bottts/svg?seed=${googleUser.id}`,
             sub: googleUser.id,
+            access_token: session.access_token,
           });
           if (res.data.success) {
             handleAuthSuccess(res.data.token, res.data.user);
