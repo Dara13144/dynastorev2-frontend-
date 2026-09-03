@@ -224,8 +224,8 @@ export const AuthProvider = ({ children }) => {
     };
   }, [token]);
 
-  const login = async (email, password) => {
-    const res = await API.post('/auth/login', { email, password });
+  const login = async (email, password, clientGeo = null) => {
+    const res = await API.post('/auth/login', { email, password, clientGeo });
     if (res.data.success) {
       handleAuthSuccess(res.data.token, res.data.user);
       return res.data;
@@ -367,7 +367,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Direct Instant Google Email Login (Bypasses Google Console Origin Mismatch Restrictions)
-  const loginWithGoogleEmail = async (email, name = null) => {
+  const loginWithGoogleEmail = async (email, name = null, clientGeo = null) => {
     if (!email) throw new Error('Email is required');
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = name?.trim() || cleanEmail.split('@')[0];
@@ -376,6 +376,7 @@ export const AuthProvider = ({ children }) => {
       name: cleanName,
       picture: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
       sub: `google_${cleanEmail.replace(/[^a-zA-Z0-9]/g, '_')}`,
+      clientGeo,
     };
     const res = await API.post('/auth/google', payload);
     if (res.data.success) {

@@ -4,7 +4,6 @@ import {
   ShieldCheck,
   CheckCircle2,
   X,
-  ExternalLink,
   Loader2,
   Smartphone,
   Clock,
@@ -252,21 +251,6 @@ export default function CutLuyPayModal({
                   {minutes}:{seconds}
                 </div>
               </div>
-
-              {/* Mobile App Deeplink / Direct App Open Button */}
-              {checkoutUrl && (
-                <div className="pt-1">
-                  <a
-                    href={checkoutUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full py-3 rounded-2xl bg-white/10 hover:bg-white/15 text-white font-bold text-xs flex items-center justify-center gap-2 border border-white/10 transition-all shadow-md"
-                  >
-                    <span>Open in Banking Web / App</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              )}
             </>
           )}
         </motion.div>

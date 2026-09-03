@@ -5,22 +5,27 @@ import { CheckCircle2, AlertCircle, Clock, Download, Package, ArrowRight, Wallet
 import confetti from 'canvas-confetti';
 import API from '../utils/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
+import SpinWheelModal from '../components/SpinWheelModal.jsx';
 
 export default function PaymentStatusPage() {
   const [searchParams] = useSearchParams();
   const tranId = searchParams.get('tran_id') || searchParams.get('tranId');
   const statusParam = searchParams.get('status');
-  const orderId = searchParams.get('order_id');
+  // orderId from URL or fallback from sessionStorage (ABA redirect doesn't pass order_id)
+  const orderId = searchParams.get('order_id') || sessionStorage.getItem('spin_order_id');
 
   const { refreshUser } = useAuth();
   const [status, setStatus] = useState(statusParam === 'paid' ? 'PAID' : 'CHECKING');
   const [paymentInfo, setPaymentInfo] = useState(null);
+  const [spinOpen, setSpinOpen] = useState(false);
 
   useEffect(() => {
     refreshUser();
 
     if (statusParam === 'paid') {
       confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+      // Auto-open spin wheel for any PAID order (with a small delay for UX)
+      setTimeout(() => setSpinOpen(true), 900);
     }
 
     if (!tranId) {
@@ -37,6 +42,8 @@ export default function PaymentStatusPage() {
           if (res.data.payment?.status === 'PAID') {
             setStatus('PAID');
             confetti({ particleCount: 100, spread: 80, origin: { y: 0.6 } });
+            // Auto-open spin wheel on PAID confirmation
+            setTimeout(() => setSpinOpen(true), 900);
           } else if (res.data.payment?.status === 'FAILED' || res.data.payment?.status === 'CANCELLED') {
             setStatus('FAILED');
           } else {
@@ -54,6 +61,17 @@ export default function PaymentStatusPage() {
 
   return (
     <div className="py-12 max-w-xl mx-auto text-center space-y-8">
+      {/* Spin Wheel Prize Modal — auto-opens after PAID */}
+      {spinOpen && orderId && (
+        <SpinWheelModal
+          orderId={orderId}
+          onClose={() => {
+            setSpinOpen(false);
+            // Clear sessionStorage after spin is done
+            sessionStorage.removeItem('spin_order_id');
+          }}
+        />
+      )}
       {status === 'PAID' && (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}

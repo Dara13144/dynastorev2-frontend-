@@ -11,6 +11,9 @@ import {
   AlertCircle,
   Loader2,
   QrCode,
+  Tag,
+  X,
+  Sparkles,
 } from 'lucide-react';
 import API from '../utils/api.js';
 import { useCart } from '../context/CartContext.jsx';
@@ -18,6 +21,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import ABAPayModal from '../components/ABAPayModal.jsx';
 import CutLuyPayModal from '../components/CutLuyPayModal.jsx';
+import SpinWheelModal from '../components/SpinWheelModal.jsx';
 
 export default function CheckoutPage() {
   const { cart, clearCart } = useCart();
@@ -31,11 +35,57 @@ export default function CheckoutPage() {
   const [abaModalOpen, setAbaModalOpen] = useState(false);
   const [cutluyModalOpen, setCutluyModalOpen] = useState(false);
   const [paymentData, setPaymentData] = useState(null);
+  const [spinOrderId, setSpinOrderId] = useState(null);
+
+  // Promo / Discount Code States
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState(null);
 
   const items = cart.items || [];
-  const totalAmount = cart.total || 0;
+  // Compute subtotal directly from items for accuracy (cart.total may lag on first load)
+  const subtotal = items.length > 0
+    ? Number(items.reduce((sum, item) => sum + (Number(item.price) || 0) * (item.quantity || 1), 0).toFixed(2))
+    : Number(cart.total || 0);
+  const discountAmount = appliedCoupon ? Number(appliedCoupon.discountAmount || 0) : 0;
+  const totalAmount = Math.max(0, Number((subtotal - discountAmount).toFixed(2)));
   const userBalance = Number(user?.balance || 0);
   const hasSufficientWalletBalance = userBalance >= totalAmount;
+
+  const handleApplyCoupon = async (codeToApply) => {
+    const targetCode = (typeof codeToApply === 'string' ? codeToApply : couponInput).trim();
+    if (!targetCode) {
+      setCouponError('Please enter a discount code');
+      return;
+    }
+    setCouponError(null);
+    setCouponLoading(true);
+    try {
+      const res = await API.post('/orders/validate-coupon', {
+        code: targetCode,
+        cartTotal: subtotal,
+      });
+      if (res.data.success && res.data.valid) {
+        setAppliedCoupon(res.data.coupon);
+        setCouponInput(res.data.coupon.code);
+        toast.success(res.data.message || `Code ${res.data.coupon.code} applied!`);
+      }
+    } catch (err) {
+      const msg = err.formattedMessage || err.response?.data?.message || 'Invalid or expired coupon code';
+      setCouponError(msg);
+      toast.error(msg);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponInput('');
+    setCouponError(null);
+    toast.info('Discount code removed');
+  };
 
   const handleGoogleCheckoutLogin = async () => {
     try {
@@ -96,22 +146,6 @@ export default function CheckoutPage() {
           )}
           <span>{googleLoading ? 'Connecting with Google...' : 'Continue with Google'}</span>
         </button>
-
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-white/10 w-full" />
-          <span className="bg-background-card px-3 text-[10px] text-slate-500 font-bold uppercase tracking-wider absolute">
-            Or with account
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 justify-center">
-          <Link to="/login?redirect=/checkout" className="flex-1 py-2.5 rounded-xl gradient-btn text-xs font-bold text-center">
-            Log In
-          </Link>
-          <Link to="/register?redirect=/checkout" className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 text-center">
-            Create Account
-          </Link>
-        </div>
       </div>
     );
   }
@@ -135,15 +169,20 @@ export default function CheckoutPage() {
       const res = await API.post('/orders', {
         productIds,
         paymentMethod,
+        couponCode: appliedCoupon?.code || undefined,
       });
 
       if (res.data.success) {
+        const newOrderId = res.data.orderId;
+        // Store orderId so spin wheel can retrieve it after any payment path
+        if (newOrderId) sessionStorage.setItem('spin_order_id', newOrderId);
+
         if (paymentMethod === 'WALLET_BALANCE') {
-          // Instant completion via wallet balance
+          // Instant completion via wallet balance — show spin immediately
           await refreshUser();
           clearCart();
-          toast.success('Order completed with wallet balance!');
-          navigate(`/payment/status?status=paid&order_id=${res.data.orderId}`);
+          toast.success('Order completed! 🎉 Spin the wheel for a prize!');
+          setSpinOrderId(newOrderId);
         } else if (paymentMethod === 'CUTLUY') {
           // CutLuy KHQR Gateway
           setPaymentData(res.data);
@@ -166,12 +205,30 @@ export default function CheckoutPage() {
     setCutluyModalOpen(false);
     await refreshUser();
     clearCart();
-    toast.success('Payment verified! Your game download is available.');
-    navigate(`/payment/status?status=paid&tran_id=${payment?.transaction_id || paymentData?.transactionId}`);
+    toast.success('Payment verified! 🎉 Spin the wheel for a prize!');
+    // Get orderId from paymentData (always present from /orders response)
+    const confirmedOrderId = paymentData?.orderId || null;
+    if (confirmedOrderId) {
+      // Show spin wheel right here before navigating
+      setSpinOrderId(confirmedOrderId);
+    } else {
+      // Fallback: navigate to payment status page
+      const tran = payment?.transaction_id || paymentData?.transactionId;
+      navigate(`/payment/status?status=paid&tran_id=${tran}`);
+    }
+  };
+
+  const handleSpinClose = () => {
+    setSpinOrderId(null);
+    navigate('/payment/status?status=paid');
   };
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Spin Wheel Modal (appears after purchase) */}
+      {spinOrderId && (
+        <SpinWheelModal orderId={spinOrderId} onClose={handleSpinClose} />
+      )}
       {/* Header */}
       <div>
         <Link to="/games" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white mb-4 transition-colors">
@@ -300,11 +357,105 @@ export default function CheckoutPage() {
               ))}
             </div>
 
+            {/* Promo / Discount Code Card */}
+            <div className="pt-2 border-t border-white/10 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Tag className="w-3.5 h-3.5 text-brand-cyan" /> Promo / Discount Code
+                </span>
+                {appliedCoupon && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold flex items-center gap-1"
+                  >
+                    <X className="w-3 h-3" /> Remove
+                  </button>
+                )}
+              </div>
+
+              {!appliedCoupon ? (
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          if (couponError) setCouponError(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                        placeholder="e.g. 0.05, 0.10, 0.15, 5$"
+                        className="w-full bg-background-card text-white text-xs font-mono font-bold uppercase rounded-xl pl-9 pr-3 py-2.5 border border-white/10 focus:outline-none focus:border-brand-cyan placeholder:normal-case placeholder:font-sans placeholder:text-slate-500"
+                      />
+                      <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+                    </div>
+                    <button
+                      type="button"
+                      disabled={couponLoading || !couponInput.trim()}
+                      onClick={() => handleApplyCoupon()}
+                      className="px-4 py-2.5 rounded-xl bg-brand-cyan hover:bg-cyan-300 text-slate-950 font-bold text-xs flex items-center gap-1.5 transition disabled:opacity-40 shrink-0"
+                    >
+                      {couponLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Apply'}
+                    </button>
+                  </div>
+
+
+                  {couponError && (
+                    <p className="text-[11px] text-rose-400 flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      <span>{couponError}</span>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-between gap-3 animate-fadeIn">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 shrink-0">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-black text-emerald-300 text-xs">
+                          {appliedCoupon.code}
+                        </span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                          {appliedCoupon.discountType === 'PERCENTAGE'
+                            ? `${appliedCoupon.discountValue}% OFF`
+                            : `$${Number(appliedCoupon.discountValue).toFixed(2)} OFF`}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-300 truncate">
+                        {appliedCoupon.description || 'Special promotional discount'}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-black text-emerald-400 shrink-0">
+                    -${discountAmount.toFixed(2)}
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="border-t border-white/10 pt-4 space-y-2 text-xs text-slate-400">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span className="text-white font-medium">${totalAmount.toFixed(2)}</span>
+                <span className="text-white font-medium">${subtotal.toFixed(2)}</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-emerald-400 font-semibold">
+                  <span className="flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> Discount ({appliedCoupon.code})
+                  </span>
+                  <span>-${discountAmount.toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
                 <span>Payment Processing Fee</span>
                 <span className="text-emerald-400 font-medium">$0.00 (Free)</span>

@@ -38,6 +38,9 @@ import AdminOrdersPage from './pages/admin/AdminOrdersPage.jsx';
 import AdminUsersPage from './pages/admin/AdminUsersPage.jsx';
 import AdminWalletPage from './pages/admin/AdminWalletPage.jsx';
 import AdminLogsPage from './pages/admin/AdminLogsPage.jsx';
+import AdminBackupPage from './pages/admin/AdminBackupPage.jsx';
+import AdminDiscountsPage from './pages/admin/AdminDiscountsPage.jsx';
+import AdminSpinPage from './pages/admin/AdminSpinPage.jsx';
 
 import NotFoundPage from './pages/NotFoundPage.jsx';
 
@@ -86,6 +89,9 @@ export default function App() {
                   <Route path="users" element={<AdminUsersPage />} />
                   <Route path="wallet" element={<AdminWalletPage />} />
                   <Route path="logs" element={<AdminLogsPage />} />
+                  <Route path="backup" element={<AdminBackupPage />} />
+                  <Route path="discounts" element={<AdminDiscountsPage />} />
+                  <Route path="spin" element={<AdminSpinPage />} />
                 </Route>
               </Routes>
             </CartProvider>

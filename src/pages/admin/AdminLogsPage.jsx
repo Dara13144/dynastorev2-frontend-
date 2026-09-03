@@ -66,8 +66,32 @@ export default function AdminLogsPage() {
                     <td className="p-4 text-slate-400 text-[11px] truncate max-w-[120px]">
                       {log.target_id || 'N/A'}
                     </td>
-                    <td className="p-4 text-slate-300 font-sans text-[11px] max-w-xs truncate">
-                      {JSON.stringify(log.metadata)}
+                    <td className="p-4 text-slate-300 font-sans text-[11px] max-w-xs">
+                      {(() => {
+                        const meta = log.metadata;
+                        if (!meta || (typeof meta === 'object' && Object.keys(meta).length === 0)) {
+                          return <span className="text-slate-500">—</span>;
+                        }
+                        if (typeof meta === 'string') {
+                          return <span className="text-slate-300 truncate block">{meta}</span>;
+                        }
+                        const parts = [];
+                        if (meta.title) parts.push(`Title: ${meta.title}`);
+                        if (meta.code) parts.push(`Code: ${meta.code}`);
+                        if (meta.username) parts.push(`User: ${meta.username}`);
+                        if (meta.amount !== undefined) parts.push(`$${meta.amount}`);
+                        if (meta.status) parts.push(`Status: ${meta.status}`);
+                        if (meta.reason) parts.push(`Reason: ${meta.reason}`);
+
+                        if (parts.length > 0) {
+                          return <span className="text-cyan-300 font-medium truncate block">{parts.join(' • ')}</span>;
+                        }
+
+                        // Clean key-value summary
+                        const keys = Object.keys(meta).slice(0, 2);
+                        const summary = keys.map((k) => `${k}: ${meta[k]}`).join(', ');
+                        return <span className="text-slate-400 truncate block">{summary || '—'}</span>;
+                      })()}
                     </td>
                   </tr>
                 ))}

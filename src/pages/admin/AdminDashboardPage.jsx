@@ -13,6 +13,9 @@ import {
   ShieldAlert,
   PlusCircle,
   FolderArchive,
+  Database,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 import API from '../../utils/api.js';
 
@@ -110,6 +113,27 @@ export default function AdminDashboardPage() {
             <FolderArchive className="w-4 h-4 text-cyan-400" />
             <span>Storage Files</span>
           </Link>
+          <Link
+            to="/admin/backup"
+            className="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white text-xs font-bold border border-white/10 flex items-center gap-2"
+          >
+            <Database className="w-4 h-4 text-emerald-400" />
+            <span>System Backup</span>
+          </Link>
+          <Link
+            to="/admin/discounts"
+            className="px-4 py-2.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-brand-cyan text-xs font-bold border border-cyan-500/30 flex items-center gap-2 transition"
+          >
+            <Tag className="w-4 h-4 text-brand-cyan" />
+            <span>Promo Codes</span>
+          </Link>
+          <Link
+            to="/admin/spin"
+            className="px-4 py-2.5 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 text-xs font-bold border border-purple-500/30 flex items-center gap-2 transition"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>Spin Wheel</span>
+          </Link>
         </div>
       </div>
 
@@ -170,6 +194,16 @@ export default function AdminDashboardPage() {
               className="p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 text-slate-200 hover:text-white flex items-center justify-between"
             >
               <span>Audited Adjustments</span>
+              <ArrowUpRight className="w-4 h-4 text-brand-cyan" />
+            </Link>
+            <Link
+              to="/admin/backup"
+              className="p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/5 text-slate-200 hover:text-white flex items-center justify-between col-span-2"
+            >
+              <div className="flex items-center gap-2">
+                <Database className="w-4 h-4 text-cyan-400" />
+                <span>System Backup & Disaster Recovery</span>
+              </div>
               <ArrowUpRight className="w-4 h-4 text-brand-cyan" />
             </Link>
           </div>

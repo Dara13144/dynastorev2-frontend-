@@ -218,25 +218,12 @@ export default function ABAPayModal({
                   </button>
                 </div>
 
-                {/* Polling indicator & Sandbox helper button */}
+                {/* Polling indicator */}
                 <div className="space-y-3 pt-2">
                   <div className="flex items-center justify-center gap-2 text-xs text-cyan-400 font-medium">
                     <Loader2 className="w-4 h-4 animate-spin text-brand-cyan" />
                     <span>Waiting for your payment confirmation...</span>
                   </div>
-
-                  <button
-                    onClick={handleSimulateSandboxPayment}
-                    disabled={simulatingPayment}
-                    className="w-full py-2.5 px-4 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 text-xs font-semibold transition-all flex items-center justify-center gap-2"
-                  >
-                    {simulatingPayment ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                    )}
-                    <span>[Sandbox] Simulate Instant ABA App Payment</span>
-                  </button>
                 </div>
               </>
             )}

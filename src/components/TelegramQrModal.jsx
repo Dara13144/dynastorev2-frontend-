@@ -264,27 +264,17 @@ export default function TelegramQrModal({ isOpen, onClose, onSuccess }) {
               </span>
             </div>
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-2 pt-1">
+            {/* Action */}
+            <div className="pt-1">
               <a
                 href={deepLink}
                 target="_blank"
                 rel="noreferrer"
-                className="py-2.5 px-3 rounded-xl bg-[#229ED9]/15 hover:bg-[#229ED9]/25 border border-[#229ED9]/30 text-[#229ED9] text-xs font-bold flex items-center justify-center gap-1.5 transition"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#229ED9]/15 hover:bg-[#229ED9]/25 border border-[#229ED9]/30 text-[#229ED9] text-xs font-bold flex items-center justify-center gap-1.5 transition"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                <span>Open App</span>
+                <span>Open in Telegram App</span>
               </a>
-
-              <button
-                type="button"
-                disabled={confirming}
-                onClick={handleSimulateScan}
-                className="py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/15 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition disabled:opacity-50"
-              >
-                {confirming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Smartphone className="w-3.5 h-3.5 text-brand-cyan" />}
-                <span>Auto-Approve</span>
-              </button>
             </div>
           </div>
         )}

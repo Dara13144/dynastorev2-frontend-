@@ -126,11 +126,20 @@ export default function AdminProductsPage() {
     e.preventDefault();
     try {
       setSubmitting(true);
+      const cleanPayload = {
+        ...formData,
+        price: (formData.price === '' || formData.price === null) ? 0 : Number(formData.price) || 0,
+        discount_price: (formData.discount_price !== '' && formData.discount_price !== null && formData.discount_price !== undefined)
+          ? Number(formData.discount_price)
+          : null,
+        category_id: formData.category_id || null,
+      };
+
       if (editingProduct) {
-        await API.put(`/admin/products/${editingProduct.id}`, formData);
+        await API.put(`/admin/products/${editingProduct.id}`, cleanPayload);
         toast.success('Product updated successfully');
       } else {
-        await API.post('/admin/products', formData);
+        await API.post('/admin/products', cleanPayload);
         toast.success('New game product added successfully');
       }
       setModalOpen(false);

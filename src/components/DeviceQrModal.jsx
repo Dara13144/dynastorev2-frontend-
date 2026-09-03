@@ -236,19 +236,6 @@ export default function DeviceQrModal({ isOpen, onClose, onSuccess }) {
                 {formattedTime}
               </span>
             </div>
-
-            {/* Quick Simulation Button for Testing */}
-            <div className="pt-1">
-              <button
-                type="button"
-                disabled={approving}
-                onClick={handleSimulateApprove}
-                className="w-full py-2.5 px-3 rounded-xl bg-brand-cyan/15 hover:bg-brand-cyan/25 border border-brand-cyan/40 text-brand-cyan text-xs font-bold flex items-center justify-center gap-2 transition disabled:opacity-50 shadow-neon-cyan"
-              >
-                {approving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                <span>Authorize & Approve Login</span>
-              </button>
-            </div>
           </div>
         )}
 

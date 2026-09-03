@@ -8,8 +8,11 @@ import {
   Users,
   Wallet,
   ScrollText,
+  Database,
   ArrowLeft,
   ShieldCheck,
+  Tag,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 
@@ -51,9 +54,12 @@ export default function AdminLayout() {
     { name: 'Products', path: '/admin/products', icon: Gamepad2 },
     { name: 'Game Files', path: '/admin/files', icon: FolderArchive },
     { name: 'Orders', path: '/admin/orders', icon: ShoppingCart },
+    { name: 'Promo Codes', path: '/admin/discounts', icon: Tag },
+    { name: 'Spin Wheel', path: '/admin/spin', icon: Sparkles },
     { name: 'Users', path: '/admin/users', icon: Users },
     { name: 'Wallet & Ledger', path: '/admin/wallet', icon: Wallet },
     { name: 'Audit Logs', path: '/admin/logs', icon: ScrollText },
+    { name: 'System Backup', path: '/admin/backup', icon: Database },
   ];
 
   return (
