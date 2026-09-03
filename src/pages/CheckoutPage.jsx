@@ -162,6 +162,12 @@ export default function CheckoutPage() {
   }
 
   const handlePlaceOrder = async () => {
+    if (!isAuthenticated || !user) {
+      toast.error('Please sign in to complete your checkout');
+      navigate('/login?redirect=/checkout');
+      return;
+    }
+
     try {
       setLoading(true);
       const productIds = items.map((i) => i.productId);
@@ -240,8 +246,31 @@ export default function CheckoutPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Payment Methods */}
+        {/* Payment Methods Column */}
         <div className="lg:col-span-7 space-y-6">
+          {/* Unauthenticated Alert Prompt */}
+          {!isAuthenticated && (
+            <div className="rounded-3xl glass-card border border-brand-cyan/30 p-5 bg-gradient-to-r from-brand-cyan/10 via-brand-purple/10 to-transparent shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-brand-cyan/20 border border-brand-cyan/40 text-brand-cyan flex items-center justify-center shrink-0 shadow-neon-cyan">
+                  <Sparkles className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white font-display">Sign In Required to Checkout</h4>
+                  <p className="text-xs text-slate-300 mt-0.5">
+                    Sign in to associate your purchase, access downloads, and spin for cash prizes!
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/login?redirect=/checkout"
+                className="inline-flex items-center justify-center px-5 py-2.5 rounded-xl gradient-btn text-xs font-bold text-white shrink-0 shadow-md"
+              >
+                Sign In / Register →
+              </Link>
+            </div>
+          )}
+
           <div className="rounded-3xl glass-card border border-white/10 p-6 space-y-5 shadow-xl">
             <h3 className="text-base font-bold text-white font-display uppercase tracking-wider">
               1. Select Payment Method
@@ -470,11 +499,16 @@ export default function CheckoutPage() {
 
             <button
               onClick={handlePlaceOrder}
-              disabled={loading || (paymentMethod === 'WALLET_BALANCE' && !hasSufficientWalletBalance)}
+              disabled={loading || (isAuthenticated && paymentMethod === 'WALLET_BALANCE' && !hasSufficientWalletBalance)}
               className="w-full py-4 rounded-2xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white shadow-rose-600/30"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
+              ) : !isAuthenticated ? (
+                <>
+                  <Sparkles className="w-4 h-4 fill-current" />
+                  <span>Sign In to Complete Purchase →</span>
+                </>
               ) : (
                 <>
                   <Zap className="w-4 h-4 fill-current" />

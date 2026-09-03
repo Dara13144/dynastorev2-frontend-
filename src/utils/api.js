@@ -23,11 +23,23 @@ API.interceptors.response.use(
   (error) => {
     let message = error.response?.data?.message || error.message || 'Something went wrong';
 
-    if (typeof message === 'object') {
+    if (error.response?.status === 401) {
+      // Clear expired / invalid credentials
+      localStorage.removeItem('dynastore_token');
+      localStorage.removeItem('dynastore_user');
+      message = 'Please sign in to continue.';
+    } else if (typeof message === 'object') {
       message = 'An unexpected error occurred. Please try again.';
     } else if (typeof message === 'string') {
       const lower = message.toLowerCase();
       if (
+        lower.includes('authentication token required') ||
+        lower.includes('token required') ||
+        lower.includes('jwt') ||
+        lower.includes('unauthorized')
+      ) {
+        message = 'Please sign in to continue.';
+      } else if (
         lower.includes('invalid input syntax') ||
         lower.includes('22p02') ||
         lower.includes('syntax error') ||

@@ -25,6 +25,18 @@ export const CartProvider = ({ children }) => {
 
     try {
       setLoading(true);
+      // Migrate any guest cart items seamlessly to user account upon sign-in
+      const guestItems = JSON.parse(localStorage.getItem('dynastore_guest_cart') || '[]');
+      if (guestItems.length > 0) {
+        for (const item of guestItems) {
+          const pid = item.productId || item.id;
+          if (pid) {
+            try { await API.post('/cart', { productId: pid }); } catch (e) {}
+          }
+        }
+        localStorage.removeItem('dynastore_guest_cart');
+      }
+
       const res = await API.get('/cart');
       if (res.data.success) {
         setCart(res.data.cart);
