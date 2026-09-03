@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Loader2,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -41,7 +42,7 @@ export default function RegisterPage() {
       }
     } catch (err) {
       console.warn('Google registration notice:', err.message);
-      setAuthError(err.message || 'Google registration failed');
+      setAuthError(err.message || 'Google registration failed. Please try again.');
       toast.error(err.message || 'Google registration failed');
     } finally {
       setGoogleLoading(false);
@@ -49,7 +50,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="py-16 max-w-md mx-auto px-4">
+    <div className="py-20 max-w-md mx-auto px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -66,16 +67,16 @@ export default function RegisterPage() {
               className="w-16 h-16 rounded-full mx-auto object-contain bg-white/95 p-1 shadow-neon-cyan"
             />
           </Link>
-          <h1 className="text-2xl font-black text-white font-display">Create Account with Google</h1>
+          <h1 className="text-2xl font-black text-white font-display">Create an Account</h1>
           <p className="text-xs text-slate-400">
-            Sign up in 1 click — no password needed, instant access to games
+            Sign up in 1-click using your Google account — instant access to all games
           </p>
         </div>
 
         {authError && (
           <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{authError}</span>
+            <span className="flex-1">{authError}</span>
           </div>
         )}
 
@@ -113,6 +114,20 @@ export default function RegisterPage() {
               {googleLoading ? 'Creating account...' : 'Sign Up with Google'}
             </span>
           </button>
+        </div>
+
+        {/* Security badge */}
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+          <ShieldCheck className="w-3.5 h-3.5 text-brand-cyan" />
+          <span>Secured by Google OAuth & Supabase Cloud</span>
+        </div>
+
+        {/* Footer Link */}
+        <div className="text-center pt-2 border-t border-white/10 text-xs text-slate-400">
+          Already have an account?{' '}
+          <Link to="/login" className="font-bold text-brand-cyan hover:underline">
+            Sign in
+          </Link>
         </div>
       </motion.div>
     </div>

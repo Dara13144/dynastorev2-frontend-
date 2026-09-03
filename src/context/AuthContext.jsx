@@ -68,6 +68,14 @@ export const AuthProvider = ({ children }) => {
           } catch (e) {}
         }
 
+        // Clean any OAuth error in URL or hash (e.g. #error=unsupported_provider)
+        const hashErr = window.location.hash?.includes('error=');
+        const queryErr = urlParams.get('error') || urlParams.get('error_description');
+        if (hashErr || queryErr) {
+          console.warn('OAuth redirect notice:', queryErr || window.location.hash);
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+
         // Handle Supabase PKCE OAuth redirect with '?code=...'
         const authCode = urlParams.get('code');
         if (authCode) {
@@ -372,7 +380,7 @@ export const AuthProvider = ({ children }) => {
                 if (errType === 'access_denied' || errType === 'popup_closed' || errType === 'popup_closed_by_user') {
                   resolve({ cancelled: true, message: 'Google Sign-In popup was closed.' });
                 } else {
-                  reject(new Error(tokenResponse.error));
+                  resolve({ cancelled: true, error: tokenResponse.error, message: `Google notice: ${tokenResponse.error}` });
                 }
               }
             },
@@ -392,7 +400,7 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
-    throw new Error('Google Sign-In could not open. Please use your Google Email.');
+    return { fallback: true, message: 'Please enter your Google Email address to sign in instantly.' };
   };
 
   // Direct Instant Google Email Login (Bypasses Google Console Origin Mismatch Restrictions)

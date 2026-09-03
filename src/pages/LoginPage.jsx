@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import {
   Loader2,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -34,24 +35,22 @@ export default function LoginPage() {
 
     try {
       const res = await loginWithGoogle();
-      if (res?.redirect) {
-        return; // Redirecting to Google OAuth
-      }
+      if (res?.redirect) return;
       if (res?.success) {
         toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
         navigateAfterAuth(res.user);
       }
     } catch (err) {
-      console.warn('Google OAuth notice:', err.message);
-      setAuthError(err.message || 'Google login failed');
-      toast.error(err.message || 'Google login failed');
+      console.warn('Google login notice:', err.message);
+      setAuthError(err.message || 'Google sign-in failed. Please try again.');
+      toast.error(err.message || 'Google sign-in failed');
     } finally {
       setGoogleLoading(false);
     }
   };
 
   return (
-    <div className="py-16 max-w-md mx-auto px-4">
+    <div className="py-20 max-w-md mx-auto px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -69,9 +68,9 @@ export default function LoginPage() {
               className="w-16 h-16 rounded-full mx-auto object-contain bg-white/95 p-1 shadow-neon-cyan"
             />
           </Link>
-          <h1 className="text-2xl font-black text-white font-display">Sign In with Google</h1>
+          <h1 className="text-2xl font-black text-white font-display">Sign In to DynaStore</h1>
           <p className="text-xs text-slate-400">
-            Connect your Google account to access games, cloud files, and orders
+            Sign in with your Google account for instant access to your games and library
           </p>
         </div>
 
@@ -79,11 +78,11 @@ export default function LoginPage() {
         {authError && (
           <div className="p-3 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-2.5 text-xs text-rose-300">
             <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-            <span>{authError}</span>
+            <span className="flex-1">{authError}</span>
           </div>
         )}
 
-        {/* Primary Official Google Sign-In Button */}
+        {/* Primary Google Sign-In Button */}
         <div>
           <button
             type="button"
@@ -114,9 +113,23 @@ export default function LoginPage() {
               </svg>
             )}
             <span className="group-hover:text-black">
-              {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
+              {googleLoading ? 'Connecting to Google...' : 'Continue with Google'}
             </span>
           </button>
+        </div>
+
+        {/* Security badge */}
+        <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
+          <ShieldCheck className="w-3.5 h-3.5 text-brand-cyan" />
+          <span>Secured by Google OAuth & Supabase Cloud</span>
+        </div>
+
+        {/* Footer Link */}
+        <div className="text-center pt-2 border-t border-white/10 text-xs text-slate-400">
+          Don't have an account?{' '}
+          <Link to="/register" className="font-bold text-brand-cyan hover:underline">
+            Create account
+          </Link>
         </div>
       </motion.div>
     </div>
