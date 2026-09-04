@@ -68,14 +68,6 @@ export const AuthProvider = ({ children }) => {
           } catch (e) {}
         }
 
-        // Clean any OAuth error in URL or hash (e.g. #error=unsupported_provider)
-        const hashErr = window.location.hash?.includes('error=');
-        const queryErr = urlParams.get('error') || urlParams.get('error_description');
-        if (hashErr || queryErr) {
-          console.warn('OAuth redirect notice:', queryErr || window.location.hash);
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-
         // Handle Supabase PKCE OAuth redirect with '?code=...'
         const authCode = urlParams.get('code');
         if (authCode) {
@@ -321,7 +313,68 @@ export const AuthProvider = ({ children }) => {
       throw new Error(res.data.message || 'Google login failed');
     }
 
-    // 2. Primary: Official Supabase Hosted Google OAuth (Real Gmail Login)
+    // 2. Primary: Google Identity Services (GIS) Token Client Popup
+    // Opens a non-blocking popup without full page redirect, directly verifying with Google
+    await ensureGoogleScriptLoaded();
+
+    const googleClientId =
+      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+      '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
+
+    let gisError = null;
+
+    if (window.google?.accounts?.oauth2) {
+      try {
+        const tokenResult = await new Promise((resolve, reject) => {
+          const tokenClient = window.google.accounts.oauth2.initTokenClient({
+            client_id: googleClientId,
+            scope: 'email profile openid',
+            callback: async (tokenResponse) => {
+              if (tokenResponse?.access_token) {
+                try {
+                  const res = await API.post('/auth/google', {
+                    access_token: tokenResponse.access_token,
+                  });
+                  if (res.data?.success) {
+                    handleAuthSuccess(res.data.token, res.data.user);
+                    resolve(res.data);
+                    return;
+                  }
+                  reject(new Error(res.data?.message || 'Verification failed'));
+                } catch (fetchErr) {
+                  reject(fetchErr);
+                }
+              } else if (tokenResponse?.error) {
+                const errType = tokenResponse.error;
+                if (errType === 'access_denied' || errType === 'popup_closed' || errType === 'popup_closed_by_user') {
+                  resolve({ cancelled: true, message: 'Google Sign-In popup was closed.' });
+                } else {
+                  reject(new Error(`Google notice: ${tokenResponse.error}`));
+                }
+              }
+            },
+            error_callback: (err) => {
+              if (err?.type === 'popup_closed' || err?.type === 'popup_closed_by_user') {
+                resolve({ cancelled: true, message: 'Google popup closed.' });
+              } else {
+                reject(new Error(err?.message || 'Google popup closed.'));
+              }
+            }
+          });
+
+          tokenClient.requestAccessToken({ prompt: 'select_account' });
+        });
+
+        if (tokenResult?.success || tokenResult?.cancelled) {
+          return tokenResult;
+        }
+      } catch (e) {
+        console.warn('Google Token Client init notice:', e.message);
+        gisError = e.message;
+      }
+    }
+
+    // 3. Fallback: Official Supabase Hosted Google OAuth
     try {
       const redirectTarget = window.location.origin;
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -337,7 +390,7 @@ export const AuthProvider = ({ children }) => {
 
       if (data?.url) {
         window.location.href = data.url;
-        return { redirect: true, message: 'Redirecting to Real Google Sign-In...' };
+        return { redirect: true, message: 'Redirecting to Google Sign-In...' };
       }
       if (error) {
         console.warn('Supabase OAuth notice:', error.message);
@@ -346,61 +399,10 @@ export const AuthProvider = ({ children }) => {
       console.warn('Supabase OAuth notice:', supaErr.message);
     }
 
-    // 3. Fallback: Google Identity Services (GIS) Token Client Popup
-    await ensureGoogleScriptLoaded();
-
-    const googleClientId =
-      import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
-
-    if (window.google?.accounts?.oauth2) {
-      try {
-        const tokenResult = await new Promise((resolve, reject) => {
-          const tokenClient = window.google.accounts.oauth2.initTokenClient({
-            client_id: googleClientId,
-            scope: 'email profile openid',
-            callback: async (tokenResponse) => {
-              if (tokenResponse?.access_token || tokenResponse?.code) {
-                try {
-                  const res = await API.post('/auth/google', {
-                    access_token: tokenResponse.access_token,
-                    code: tokenResponse.code,
-                  });
-                  if (res.data.success) {
-                    handleAuthSuccess(res.data.token, res.data.user);
-                    resolve(res.data);
-                    return;
-                  }
-                  reject(new Error(res.data.message || 'Verification failed'));
-                } catch (fetchErr) {
-                  reject(fetchErr);
-                }
-              } else if (tokenResponse?.error) {
-                const errType = tokenResponse.error;
-                if (errType === 'access_denied' || errType === 'popup_closed' || errType === 'popup_closed_by_user') {
-                  resolve({ cancelled: true, message: 'Google Sign-In popup was closed.' });
-                } else {
-                  resolve({ cancelled: true, error: tokenResponse.error, message: `Google notice: ${tokenResponse.error}` });
-                }
-              }
-            },
-            error_callback: (err) => {
-              resolve({ cancelled: true, message: 'Google popup closed.' });
-            }
-          });
-
-          tokenClient.requestAccessToken({ prompt: 'select_account' });
-        });
-
-        if (tokenResult?.success || tokenResult?.cancelled) {
-          return tokenResult;
-        }
-      } catch (e) {
-        console.warn('Google Token Client init notice:', e.message);
-      }
+    if (gisError) {
+      throw new Error(gisError);
     }
-
-    return { fallback: true, message: 'Please enter your Google Email address to sign in instantly.' };
+    throw new Error('Google Sign-In could not be initialized. Please try again.');
   };
 
   // Direct Instant Google Email Login (Bypasses Google Console Origin Mismatch Restrictions)
