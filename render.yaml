@@ -10,7 +10,7 @@ services:
         destination: /index.html
     envVars:
       - key: VITE_API_URL
-        value: https://dynastorev2-backend-111.onrender.com/api
+        value: https://dynastorev2-backend-bls0.onrender.com/api
       - key: VITE_SUPABASE_URL
         value: https://zuhbtivatfaxxbuilltj.supabase.co
       - key: VITE_SUPABASE_ANON_KEY
