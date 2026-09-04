@@ -10,13 +10,15 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
 export default function LoginPage() {
-  const { loginWithGoogle } = useAuth();
+  const { loginWithGoogle, loginWithGoogleEmail } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const redirectTarget = searchParams.get('redirect') || null;
 
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [directEmail, setDirectEmail] = useState('');
+  const [emailLoading, setEmailLoading] = useState(false);
   const [authError, setAuthError] = useState(null);
 
   const navigateAfterAuth = (userData) => {
@@ -46,6 +48,26 @@ export default function LoginPage() {
       toast.error(err.message || 'Google sign-in failed');
     } finally {
       setGoogleLoading(false);
+    }
+  };
+
+  const handleDirectEmailAuth = async (e) => {
+    e.preventDefault();
+    if (!directEmail.trim()) return;
+    setAuthError(null);
+    setEmailLoading(true);
+
+    try {
+      const res = await loginWithGoogleEmail(directEmail.trim());
+      if (res?.success) {
+        toast.success(`Welcome to DynaStore, ${res.user?.username || 'Gamer'}!`);
+        navigateAfterAuth(res.user);
+      }
+    } catch (err) {
+      setAuthError(err.message || 'Sign in failed. Please try again.');
+      toast.error(err.message || 'Sign in failed');
+    } finally {
+      setEmailLoading(false);
     }
   };
 
@@ -117,6 +139,36 @@ export default function LoginPage() {
             </span>
           </button>
         </div>
+
+        {/* Divider & Direct Google Email Sign-In (Instant Access) */}
+        <div className="relative flex items-center justify-center pt-1">
+          <div className="border-t border-white/10 w-full" />
+          <span className="bg-[#0b0f19] px-3 text-[11px] uppercase tracking-wider text-slate-400 shrink-0 font-medium">
+            or instant sign-in with email
+          </span>
+          <div className="border-t border-white/10 w-full" />
+        </div>
+
+        <form onSubmit={handleDirectEmailAuth} className="space-y-3">
+          <div className="relative">
+            <input
+              type="email"
+              value={directEmail}
+              onChange={(e) => setDirectEmail(e.target.value)}
+              placeholder="e.g. daragaming114400@gmail.com"
+              required
+              className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-brand-cyan transition-colors"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={emailLoading || !directEmail.trim()}
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-cyan to-blue-600 hover:from-brand-cyan/90 hover:to-blue-600/90 text-white font-bold text-xs uppercase tracking-wider transition-all disabled:opacity-50 shadow-md flex items-center justify-center gap-2"
+          >
+            {emailLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+            <span>{emailLoading ? 'Signing In...' : 'Sign In with Email'}</span>
+          </button>
+        </form>
 
         {/* Security badge */}
         <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
