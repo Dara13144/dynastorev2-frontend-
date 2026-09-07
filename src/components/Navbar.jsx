@@ -82,8 +82,11 @@ export default function Navbar() {
               <Sparkles className="w-4 h-4 text-brand-cyan" />
               <span>{t('nav.exploreGames')}</span>
             </Link>
-            <Link to="/categories" className="hover:text-brand-cyan transition-colors">
-              <span>{t('nav.categories')}</span>
+            <Link to="/about" className="hover:text-brand-cyan transition-colors">
+              <span>{t('nav.about') || 'About Us'}</span>
+            </Link>
+            <Link to="/privacy" className="hover:text-brand-cyan transition-colors">
+              <span>{t('nav.privacy') || 'Privacy & Legal'}</span>
             </Link>
           </div>
 
@@ -289,11 +292,18 @@ export default function Navbar() {
                 <span>🎮</span> {t('nav.exploreGames')}
               </Link>
               <Link
-                to="/categories"
+                to="/about"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200 flex items-center gap-2"
               >
-                <span>📂</span> {t('nav.categories')}
+                <span>ℹ️</span> {t('nav.about') || 'About Us'}
+              </Link>
+              <Link
+                to="/privacy"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg hover:bg-white/5 text-slate-200 flex items-center gap-2"
+              >
+                <span>🛡️</span> {t('nav.privacy') || 'Privacy & Legal'}
               </Link>
               <Link
                 to="/cart"

@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
@@ -13,7 +13,6 @@ import AdminLayout from './layouts/AdminLayout.jsx';
 import HomePage from './pages/HomePage.jsx';
 import GamesPage from './pages/GamesPage.jsx';
 import GameDetailPage from './pages/GameDetailPage.jsx';
-import CategoriesPage from './pages/CategoriesPage.jsx';
 import CartPage from './pages/CartPage.jsx';
 import CheckoutPage from './pages/CheckoutPage.jsx';
 import PaymentStatusPage from './pages/PaymentStatusPage.jsx';
@@ -22,6 +21,8 @@ import WalletPage from './pages/WalletPage.jsx';
 import DownloadsPage from './pages/DownloadsPage.jsx';
 import OrdersPage from './pages/OrdersPage.jsx';
 import OrderDetailPage from './pages/OrderDetailPage.jsx';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage.jsx';
+import AboutPage from './pages/AboutPage.jsx';
 
 // Auth Pages
 import LoginPage from './pages/LoginPage.jsx';
@@ -57,7 +58,7 @@ export default function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/games" element={<GamesPage />} />
                   <Route path="/games/:slug" element={<GameDetailPage />} />
-                  <Route path="/categories" element={<CategoriesPage />} />
+                  <Route path="/categories" element={<Navigate to="/games" replace />} />
                   <Route path="/cart" element={<CartPage />} />
                   <Route path="/checkout" element={<CheckoutPage />} />
                   <Route path="/payment/status" element={<PaymentStatusPage />} />
@@ -68,6 +69,12 @@ export default function App() {
                   <Route path="/downloads" element={<DownloadsPage />} />
                   <Route path="/orders" element={<OrdersPage />} />
                   <Route path="/orders/:id" element={<OrderDetailPage />} />
+
+                  {/* Information & Legal Pages */}
+                  <Route path="/privacy" element={<PrivacyPolicyPage />} />
+                  <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+                  <Route path="/terms" element={<PrivacyPolicyPage />} />
+                  <Route path="/about" element={<AboutPage />} />
 
                   {/* Auth */}
                   <Route path="/login" element={<LoginPage />} />

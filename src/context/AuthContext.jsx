@@ -319,7 +319,7 @@ export const AuthProvider = ({ children }) => {
 
     const googleClientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
+      '757134176189-d2pm2559geqom3372so6p0t6d56il34m.apps.googleusercontent.com';
 
     let gisError = null;
 
@@ -430,7 +430,7 @@ export const AuthProvider = ({ children }) => {
     await ensureGoogleScriptLoaded();
     const googleClientId =
       import.meta.env.VITE_GOOGLE_CLIENT_ID ||
-      '731469891455-9jt8aq96q6rjniu85dhg1fkm0ujlsatj.apps.googleusercontent.com';
+      '757134176189-d2pm2559geqom3372so6p0t6d56il34m.apps.googleusercontent.com';
 
     if (window.google?.accounts?.id) {
       try {

@@ -22,6 +22,8 @@ export const translations = {
       searchPlaceholder: 'ស្វែងរកហ្គេម, អ្នកបង្កើត, modpack...',
       language: 'ភាសា',
       role: 'តួនាទី',
+      about: 'អំពីពួកយើង',
+      privacy: 'គោលការណ៍ឯកជនភាព & ច្បាប់',
     },
     // Home Page
     home: {
@@ -213,6 +215,8 @@ export const translations = {
       searchPlaceholder: 'Search games, developers, modpacks...',
       language: 'Language',
       role: 'Role',
+      about: 'About Us',
+      privacy: 'Privacy & Legal',
     },
     // Home Page
     home: {

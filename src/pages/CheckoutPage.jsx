@@ -25,7 +25,7 @@ import SpinWheelModal from '../components/SpinWheelModal.jsx';
 
 export default function CheckoutPage() {
   const { cart, clearCart } = useCart();
-  const { user, isAuthenticated, refreshUser, loginWithGoogle, loginWithGoogleEmail } = useAuth();
+  const { user, isAuthenticated, refreshUser, loginWithGoogle } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 

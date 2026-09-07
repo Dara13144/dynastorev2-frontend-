@@ -9,7 +9,7 @@ export default function Footer() {
   return (
     <footer className="border-t border-white/10 bg-background-card/90 pt-16 pb-12 mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-white/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
             <Link to="/" className="flex items-center gap-3">
@@ -48,20 +48,10 @@ export default function Footer() {
             <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">{t('footer.quickLinks')}</h4>
             <ul className="space-y-2.5 text-sm text-slate-400">
               <li><Link to="/games" className="hover:text-brand-cyan transition-colors">{t('nav.exploreGames')}</Link></li>
-              <li><Link to="/categories" className="hover:text-brand-cyan transition-colors">{t('nav.categories')}</Link></li>
+              <li><Link to="/about" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'អំពីពួកយើង' : 'About Us'}</Link></li>
+              <li><Link to="/privacy" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'កម្មសិទ្ធិបញ្ញា & ច្បាប់' : 'Legal & Copyright'}</Link></li>
               <li><Link to="/wallet" className="hover:text-brand-cyan transition-colors">{t('nav.wallet')}</Link></li>
               <li><Link to="/downloads" className="hover:text-brand-cyan transition-colors">{t('nav.downloads')}</Link></li>
-            </ul>
-          </div>
-
-          {/* Popular Categories */}
-          <div>
-            <h4 className="text-white font-semibold text-sm mb-4 uppercase tracking-wider">{isKhmer ? 'ប្រភេទហ្គេមល្បីៗ' : 'Top Genres'}</h4>
-            <ul className="space-y-2.5 text-sm text-slate-400">
-              <li><Link to="/games?category=action" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'ហ្គេមវាយប្រហារ & សកម្មភាព' : 'Action & Combat'}</Link></li>
-              <li><Link to="/games?category=rpg" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'ហ្គេមផ្សងព្រេង RPG' : 'Role Playing (RPG)'}</Link></li>
-              <li><Link to="/games?category=racing" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'ហ្គេមប្រណាំងឡាន' : 'Racing & Drift'}</Link></li>
-              <li><Link to="/games?category=minecraft" className="hover:text-brand-cyan transition-colors">{isKhmer ? 'Minecraft & Modpacks' : 'Sandbox & Mods'}</Link></li>
             </ul>
           </div>
 
@@ -88,9 +78,15 @@ export default function Footer() {
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
           <p>© {new Date().getFullYear()} DynaStore Cambodia. {t('footer.rightsReserved')}</p>
           <div className="flex items-center gap-6">
-            <span>{isKhmer ? 'លក្ខខណ្ឌប្រើប្រាស់' : 'Terms of Service'}</span>
-            <span>{isKhmer ? 'គោលការណ៍ឯកជនភាព' : 'Privacy Policy'}</span>
-            <span>{isKhmer ? 'គោលការណ៍សងប្រាក់' : 'Refund Policy'}</span>
+            <Link to="/terms" className="hover:text-brand-cyan transition-colors">
+              {isKhmer ? 'លក្ខខណ្ឌប្រើប្រាស់' : 'Terms of Service'}
+            </Link>
+            <Link to="/privacy" className="hover:text-brand-cyan transition-colors">
+              {isKhmer ? 'គោលការណ៍ឯកជនភាព' : 'Privacy Policy'}
+            </Link>
+            <Link to="/about" className="hover:text-brand-cyan transition-colors">
+              {isKhmer ? 'អំពីពួកយើង' : 'About Us'}
+            </Link>
           </div>
         </div>
       </div>

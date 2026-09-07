@@ -19,22 +19,14 @@ import { useLanguage } from '../context/LanguageContext.jsx';
 export default function HomePage() {
   const { t, isKhmer } = useLanguage();
   const [featuredData, setFeaturedData] = useState(null);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const [featRes, catRes] = await Promise.all([
-          API.get('/products/featured'),
-          API.get('/categories'),
-        ]);
-
+        const featRes = await API.get('/products/featured');
         if (featRes.data.success) {
           setFeaturedData(featRes.data);
-        }
-        if (catRes.data.success) {
-          setCategories(catRes.data.categories);
         }
       } catch (err) {
         console.error('Failed to load home page content:', err);
@@ -117,38 +109,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 2. Categories Horizontal Bar */}
-      <section className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white font-display tracking-tight">
-              {isKhmer ? 'ស្វែងរកតាមប្រភេទ' : 'Browse by Genre'}
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-400">
-              {isKhmer ? 'រើសហ្គេម និងកម្មវិធីតាមជំពូកដែលអ្នកចូលចិត្ត' : 'Explore game files curated by game category'}
-            </p>
-          </div>
-          <Link to="/categories" className="text-xs font-bold text-brand-cyan hover:underline flex items-center gap-1">
-            <span>{t('home.viewAll')}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {categories.slice(0, 10).map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/games?category=${cat.slug}`}
-              className="p-4 rounded-2xl glass-card border border-white/5 hover:border-brand-cyan/40 hover:bg-brand-hover transition-all text-center group"
-            >
-              <h4 className="text-sm font-bold text-white group-hover:text-brand-cyan transition-colors truncate">
-                {cat.name}
-              </h4>
-              <span className="text-[10px] text-slate-400 mt-1 block">{isKhmer ? 'មើលហ្គេមទាំងអស់ →' : 'Explore Collection →'}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
 
       {/* 3. Popular Games */}
       <section className="space-y-6">
